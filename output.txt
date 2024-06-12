@@ -1,0 +1,556 @@
+05_BAI5-AI-Technische_Architektur_Backend
+
+0:00
+Herzlich Willkommen zur nächsten Videoeinheit. Dieses Mal verlassen wir den methodischen Bereich, wie wir zum Architektur kommen, mit dem wir uns jetzt eine ganze Weile beschäftigt haben, sondern gehen jetzt in Richtung Technik, was vielleicht den ein oder anderen von euch auch mehr gefallen könnte als die reine Methodik. Und dort fangen wir an mit dem Backend. Kurze Erinnerung was ist das Backend oder wo kommen wir da her, das Bild.
+
+0:30
+Einfach gedacht, klassischerweise ein Informationssystem heutzutage werden wird in diesem 3. Tier, wie man sie ja dann eher auch nennt, entworfen, das heißt, typisch auf alle hat man natürlich irgendwo ne Persistenzlösung, unten eine Datenbank.
+
+0:46
+Doch immer damit werden wir uns auch noch mal näher beschäftigen, welche Optionen es da gibt und da drüber liegt dann Big Backend als Bindeglied zwischen dem Frontend oder Benutzer dann mit dem System arbeitet und auf Daten zugreift und im Backend.
+
+1:01
+Da passiert eine ganze Menge. Das hat so einige Aufgaben und da werden wir uns jetzt in dieser Videoeinheit mit beschäftigen, welche Möglichkeiten es gibt, dieses Backend weiter zu unterteilen.
+
+1:14
+Wir uns zwar nicht nur in fachliche Komponenten, die wir uns ja schon angeschaut haben, sondern wirklich in unterschiedlicher.
+
+1:24
+Technischer Aspekt oder wie diese technischen Aspekte dort behandelt werden, können kurze Erinnerungen, technische Architektur des Backends, das gibt wirklich den Rahmen vor, ne, also wir haben, wenn wir von der Methodik her kommen und eine fachliche Architektur im Groben entworfen haben, eine Bausteinsicht, eine fachliche Bausteinsicht, die hier auch mal dargestellt ist, bei der wir letztendlich fachliche Komponenten haben, die in Abhängigkeiten zueinander stehen. Wir haben eventuell sogar.
+
+1:55
+Eine Idee für einen Schnittstellen für Schnittstellen, die wir entworfen haben.
+
+2:01
+Und das gilt es nun aber natürlich irgendwo wirklich in einer technischen Architektur im Backend niederzulegen. Da sind noch ein paar Fragen offen, mit denen wir uns noch nicht wirklich beschäftigt haben.
+
+2:14
+Teilweise schon, aber noch nicht ganz. Das eine war so ein Stück weit, wie bildet man denn jetzt so eine technische Komponente ab, das haben wir schon gesehen, gibt es verschiedene Möglichkeiten, man kann es über Bildunits machen, man kann es aber auch einfach auf Kundenventionale oder konventionelle Arbeit über konventionelle Konventionen machen.
+
+2:29
+Packages oder Textschnamen festlegt.
+
+2:33
+Und wir haben uns auch schon damit beschäftigt, wie kann man diese Komponenten zusammen an Komponenten integrieren. Da hatte ich auch spring IO C, also den Version of Control Container von Springby vorgestellt als eine technische Lösung, aber irgendwo muss man die ganzen Komponenten natürlich auch miteinander verdrahten, die Punkte haben wir schon ein Stück weit adressiert, was aber offen ist, ist letztendlich, wie implementieren wir denn jetzt eine Komponente?
+
+3:04
+Wie kann man die denn weiter strukturieren? Da gibt es ja immer, es steckt ja relativ viel drin, was da erledigt werden muss, und deswegen wollen wir uns da jetzt in dieser Einheit mehr beschäftigen.
+
+3:16
+Wenn ich sage, steckt da relativ viel drin.
+
+3:20
+Können wir uns ja mal kurz vergegenwärtigen, was da die Aufgaben von so einem Back End sind. Hier nochmal das Überblicksbild auch, aber auch noch mal mit einem weiteren Element, was bislang noch nicht drin war, wir uns ja auch später noch mal eine eigene Einheit mehr mit beschäftigen werden, der Systemintegration, trotzdem ist das hier auch schon berücksichtigt werden, dass ein Backend, und das ist ja auch eine der Motivationen gewesen, auch.
+
+3:44
+Schnittstellen bietet nicht nur für die für das eigene System, das sind für das eigene Frontend, sondern auch für Fremdsysteme oder Fremdsysteme integriert. Selber in den eigentlichen Geschäftslogiken, die da implementiert sind.
+
+3:59
+So, wenn man uns jetzt das Bild anschauen, dann sind so ein paar Dinge gekommen, springen da sofort heraus, wofür das Backend offensichtlich verantwortlich ist.
+
+4:06
+Das eine ist erstmal die Funktionalität, die es anbietet, über irgendwelche Schnittstellen nach draußen anbieten. Das ist offensichtlich. Dazu gehört natürlich das Fondant, vielleicht aber auch ein externes System.
+
+4:21
+Und wenn ich über Funktionalitäten spreche, dann ist damit natürlich die Geschäftslogik gemeint. Das heißt, im Backend ist auch typischerweise die Geschäftslogik implementiert.
+
+4:32
+Da gibt es, werden wir auch später beim Frontend sehen, jetzt auch noch verschiedene Trader of Entscheidungen, weil heutzutage natürlich auch die Fronten immer leistungsstärker geworden sind. Da kann man auch bei javascript basierten Frontense oder Touchscreens frontrins relativ gut wartbarer Logiken im Frontend fahren kann und da ist dann immer aber ein Stück weit die Frage, was tue ich jetzt ins Backend, um es auf die Weise auch dort zu Kapseln, nach dem Information hyping Prinzip.
+
+5:02
+So dass die gleiche Logik auch von anderen Fremdsystemen abgelaufen wird und nicht man letztendlich genau diese logisch doppelt implementiert. Und deswegen ist da immer so den Trade auf tue ich manches im Frontend, weil es dort schneller ist. Es läuft ja dann nicht übers Netzwerk irgendeine Logik, die ich erst aufrufen muss, sondern kann direkter implementiert werden, das sind so Fragestellungen, die man da hat, aber klassischerweise eine irgendeine Art und Geld geschäftstheorie wird definitiv ein Backend sein oder muss dort auch sein.
+
+5:34
+Und die Geschäftslogik ist natürlich irgendwie relativ blutleer oder inhaltsarm, wenn das nicht irgendwelche Daten hat, mit denen das arbeitet. Außerdem die natürlich über die Schnittstelle reinkommen, sondern natürlich braucht es dann halt die Einbindung an die Persistenz und Daten zu verbreiten.
+
+5:50
+Und das sind erstmal würde ich sagen, so die offensichtlichen Aufgaben eines Backends, die ihr wahrscheinlich auch so, wenn ihr drüber nachgedacht habt, irgendwo im Kopf gehabt habt, die ich ja glaube ich auch schon so ein bisschen beschrieben hab.
+
+6:02
+Aber passiert noch ne ganze Menge mehr. Das eine wenn wir über Daten verwalten sprechen, dann ist das eine natürlich irgendwie, dass man Daten liest, Daten verändert, Wegschreibt löscht. Ja soweit so gut, aber ein ganz wichtiges Element dabei ist natürlich auch.
+
+6:22
+Sind oder sind dabei auch Transaktionen? Typischerweise möchte man ja Aktionen irgendwie bündeln und diese nach gewissen Kriterien ganze gar nicht festschreiben in der Datenbank und auch das ist Aufgabe des Backends, genau diese Transaktionen zu verwalten da.
+
+6:42
+Noch mal näher mit beschäftigen.
+
+6:45
+So neben den Transaktionen ne muss ich natürlich auch irgendwo die Daten herstellen, dass ich dass die gültig sind, das heißt ich muss auch eine Validierung gewährleisten, sowohl syntaktische Validierung das was irgendwo vom Frontend oder anderen Systemen kommt, dass das den Regeln der Schnittstelle entspricht, als auch semantische Überprüfungen, semantische Regeln, die in Kombination bei den Aktionen auftreten, also fachliche Regeln, geschäftsregeln, die dort implementiert werden müssen. Ich muss auch sicherstellen, dass die Sicherheit gewährleistet ist. Es soll ja nicht irgendjemandem beim Backend aufrufen können und Informationen rausklauen oder Unfug betreiben, sondern.
+
+7:22
+Nur Benutzer, die das dürfen, das heißt, ich muss sie authentifizieren, bedeutet, ich muss sicherstellen, dass das diejenigen sind, die das ganze System benutzen dürfen, und ich muss auch prüfen, wenn ich das sichergestellt hab, sind wir haben diese Benutzer auch das Recht überhaupt ne, es ist ein super User.
+
+7:39
+WRK System Approven darf oder nicht, muss ich prüfen und sicherstellen. Ansonsten kann ja irgendein Sachbereiter auch einfach seinen Auftrag, weil er schnell das machen will. So ein Einkauf approven, ohne dass er es recht hat.
+
+7:51
+Und wenn man sie Thema Sicherheit sind, ist auch ein Thema natürlich was passiert und Fehler ne. Also ich muss ja auch sicherstellen, dass Fehler sauber abgearbeitet und abgehandhabt werden. Es darf halt nicht passieren, dass Fehler einfach letztendlich.
+
+8:05
+Durchgereicht werden und das Backend wegen einer Exception abstürzt, das ist der Worst case. Es muss aber auf der anderen Seite auch ein paar andere Punkte berücksichtigt werden, die wir uns gleich auch noch mal anschauen werden und daneben passiert sogar noch mehr. Ne, also ich muss auch irgendwo natürlich den Betrieb sicherstellen, das heißt ich muss auch Monitoring und Logging irgendwo vereinen, kann in dem Backend bis hinzu natürlich der Integration von Drittsystemen, auch das muss ja irgendwo gewährleistet sein und auch das muss ich sicherstellen, ihr seht, es ist eine ganze Menge an Aufgaben die das Backend.
+
+8:39
+Und die man irgendwo natürlich dann auch verorten muss innerhalb des Backends, welcher Teil des Backends das Buch für verantwortlich, damit ich bei Fehlern oder bei Punkten genau weiß, wo ich reingreifen muss und auch Änderungen durchzuführen und auch überhaupt die Arbeit sinnvoll zu gestalten.
+
+8:55
+Wir werden uns jetzt ein Paar von diesen Aufgaben ein paar wichtige Aspekte mal rausgreifen und da mal näher darauf eingehen und auch konzeptionelle grundlegende Prinzipien dort mal darlegen.
+
+9:04
+Das eine ist die Sicherheit, ne, also Sicherheit gehört einfach an die Grenzen des Backends. Ich muss letztendlich natürlich, bevor irgendjemand da etwas innerhalb des Backens aufruft, eine Barriere bauen, die sicherstellt, dass derjenige authentifiziert ist und auch die Autorisierung muss geprüft werden, dass derjenige, wenn ich sicherstelle, dass er es ist, über Passwort oder wir werden später auch mit Awards andere Mittel kennenlernen.
+
+9:30
+Wenn das sichergestellt ist, auch das rechte Zeug. Und Recht ist auch etwas, was man auf 2 unterschiedlichen Weisen prüfen kann.
+
+9:37
+Das eine ist, hat er das Recht, diese Operation aufzurufen, also erst recht eine bestimmte Aktion durchzuführen. Das andere ist datenabhängige recht, die sind nicht ganz so einfach zu verstehen, das ist im Prinzip dann, dass ich nur bestimmte Daten sehen darf, wenn ich ne laseroperation aufrufe.
+
+9:52
+Zum Beispiel nur die Einkäufe aus meiner Abteilung oder in dem Hochschulinformationssystem vielleicht nur die von meinem Department. Die Vorlesung auf der anderen Weise Art und Weise muss ich natürlich auch sicherstellen, dass die.
+
+10:06
+Auch beim Schreiben, dass ich zum Beispiel nicht den Vorlesungsplan von einem anderen Department einfach überschreiben darf. Ne, das sollte ich dann nicht dafür vielleicht sehen, aber nicht ändern. Das sind so Aspekte, die man da berücksichtigen muss, dann muss ich auch.
+
+10:19
+Genau diese Punkte halt transparent handhaben, dass man wirklich dort gar nicht als Entwickler ein Fehler machen kann, sondern das ist idealerweise irgendwo in einer Schicht.
+
+10:28
+Um den um den Kern drumherum abgefangen wird typischerweise auch konfigurierbar, dass man wirklich festlegen kann, welche Dinge welchen Regeln unterliegen und was wo abgeprüft wird.
+
+10:41
+Und ich kann das machen, indem ich zum Beispiel auch standardifizierte Authentifizierungsprotokolle nutzen kann. Früher wurde viel Basic Authentication genutzt, mit Username und Passwort, das ist nicht mehr zeitgemäß, heutzutage nimmt man meistens ROOS 2 oder Open ID als Erweiterung davon werden wir uns später im Kapitel der Systemintegration nochmal näher anschauen.
+
+11:02
+Und typischerweise macht man das über wirklich user Informationen, die an dem User dran ist. Also irgendwie ne Rolle n Attribut was da dran hängt, wie zum Beispiel zu einem Department zuweist.
+
+11:13
+Soweit zum Thema Sicherheit. Ein weiteres Thema. Wie gesagt waren das Thema Transaktionen ne ist ja auch sicherstellt, dass die Daten sich ganz schlüssig sind und bei den Transaktionen ist es wichtig, dass wir da erstmal unterscheiden zwischen wirklich.
+
+11:26
+Fachlichen Transaktionen, das ist das, was der Benutzer darunter begreift, wenn er einen Auftrag bearbeitet, ist das gesamte von ihm eine fachliche Transaktion wichtig, üblicherweise.
+
+11:37
+Uns eine fachliche Transaktion, unterteilt in mehrere technische Transaktionen, eine technische Transaktion, wo ich ihn lese, den Auftrag dann bearbeitet der da was in seinem Frontend und dann speichert er, und das passiert in einer weiteren technischen Transaktion.
+
+11:50
+Und technischer Transaktion. Damit sind dann wirklich die Transaktionen von der Persistenzlösung gemeint, also bei einer relationalen Datenbank quasi deren die Transaktion, die da ist mit Asset Kriterien, also atomal konsistent.
+
+12:04
+Halt mit einer Isolierung gegenüber anderen Transaktionen und dass die Daten, wenn es abgeschlossen ist, auch gesichert und persistent sind.
+
+12:13
+Wichtige Eigenschaften, die einem viel bringen, werden wir uns auch noch mal näher mit beschäftigen. Dann in der Einheit zur Persistenz Ebene, darunter zur Persistentschicht das.
+
+12:22
+Bieten aber diese technischen Transaktionen.
+
+12:26
+Und üblicherweise so, wenn ich ein Backend aufrufe, passiert diese transaktionssteuerung transparente Hintergrund, man öffnet quasi auch manchmal, ohne dass man es sehr stark steuert, einfach direkt eine Transaktion.
+
+12:40
+Und bedeutet alles, was darunter abläuft, wenn es wirklich eine erste Transaktion, das ist dann für sich gesichert, wenn es einen Fehler gibt, wird auch alles zurückgerollt, man hinterlässt dadurch die Daten nicht in einem konsistenten Zustand, was einem viel Kopfschmerzen.
+
+12:56
+Oder viel Kopfschmerzen verändert Kopfzerbrechen, wie man sonst hätte, wenn man diese Eigenschaften nicht hat.
+
+13:02
+Typischerweise kann es natürlich trotzdem sein, dass man Konflikte hat, ne, da werden wir uns auch noch mal in der Persistenzlösung damit auseinandersetzen, wenn jemand parallel gleich einen Auftrag bearbeitet, kann es ja zu Konflikten kommen und da gibt es verschiedene Strategien, wie man damit umgeht, was auch sehr wichtig ist. Transaktionen können halt wirklich geschachtelt sein, man kann Transaktionen halt Schachteln, indem man dann 2 subtransaktionen öffnet und das macht man zum Beispiel, wenn man die eigenen Daten speichert, bevor man.
+
+13:34
+Eine andere System aufruft und zusammen ergeben sie an die übergeordnete Transaktion ist eine Möglichkeit, das Ganze noch komplexer zu gestalten. Das kann aber auch relativ sehr oder relativ schnell sehr problematisch werden, wenn man den Überblick verliert und auch dadurch einen komplexen Geschäftsfällen halt auch in einen Deadlock laufen kann, wo sich die Transaktion gegenseitig bremsen.
+
+13:59
+Dann kommen wir zum Thema.
+
+14:03
+Fehlerbehandlung und bei Fehlerbehandlung hatte ich schon gesagt, es ist wichtig zum einen, dass man vermeidet, dass das System abstürzt und das Backend gar nicht mehr verfügbar ist. Ja.
+
+14:15
+Der zweite wichtige Aspekt ist dabei, dass man auch sinnvolle Fehlermeldungen nach draußen gibt und nicht so etwas wie das hier.
+
+14:23
+Das ist halt etwas, was tatsächlich hier vielleicht auch mal das ein oder andere mal selber gesehen hat. Ich hab es auch schon mal bei dem ein oder anderen Programm gesehen, woran Stack Tracy oder ähnliches, das ist n Haube und n Haufen gibberisch, den man gar nicht so richtig versteht.
+
+14:35
+Der da zurückgegeben wird.
+
+14:38
+Und wenn das passiert, dann ist üblicherweise die Reaktion gerade von so einem Experten da. Von einem Informationssystem sitzt der gerade eine halbe Stunde mühsam einen Auftrag bearbeitet hat, mit Absprachen, telefonisch, nebenbei und allem dran, und das Eingeklimpert hat doch speichern drückt und das dann hochkommt, der reagiert dann üblicherweise so, also die sind dann nicht sehr erfreut, da kann man dann auch davon ausgehen, dass da Telefone, Anrufe kommen in den Support bin ich sehr freundlich sind, das heißt man muss auch hier Fehler wirklich architekturell sinnvoll adressieren und berücksichtigen und dazu gehört erst einmal auch eine Unterscheidung von verschiedenen Fehlerarten oder Typen.
+
+15:17
+Wichtig ist halt, dass man wirklich erst mal unter zwischen spezifisch spezifizierten Zeiten und unspezifizierten Verhalten spricht. Also ich spezifiziere das Verhalten ist das, was man halt wirklich implementiert hat mit einem bewussten Spiel, weil es so gefordert wurde.
+
+15:31
+Wo es natürlich n normales Ergebnis gibt, was zurückgegeben wird, aber auch spezifizierte Fehler n doppelter Username zum Beispiel oder ein Einkauf übertritt ne bestimmtes Limit oder solchen Geschichten und unspezifiziertes verhalten kann dann zu unspezifizierten Fehlern führen. Das sind typischerweise Dinge, wo vielleicht die Datenbank oder das System nicht verfügbar sind, wo aber letztendlich auch vielleicht Programmierfehler einfach vorliegt und der dann zu einer Exception führt. Das sind Dinge, die da passieren können und man kann die dann halt unterschiedlich zurückgeben. Also man kann dann wirklich.
+
+16:07
+Das normale Ergebnis und Rückgabewertung kurz ein spezifischer Fehler ist ne Spezi spezifizierte Exception, die auch gefangen werden muss. Von dem Aufruf war, weil er dann auch agieren muss und kann ne wichtig er muss es auch können wenn ein anderes System nicht verfügbar ist. Was so ein Programmierer dann da implementieren kann man nicht viel machen.
+
+16:26
+Und unspezifizierte Fehler sollten auch unspezifische Exceptions sein, also Runtime Exceptions im Java File, die halt auch nicht gefangen werden müssen, die da durchfliegen.
+
+16:36
+Genau.
+
+16:39
+Und wichtig, man braucht dann halt eine transparente Behandlung in so einer Art Sicherheitsfassade vor dem eigentlichen Backend LPRI die dann halt Fehler die Hochpoppen erstmal die auffängt ne es dekoriert quasi das Backend und.
+
+16:52
+Stellt sicher, dass das ganze generische Fehlermeldungen zurückgegeben wird und dass das auch übertragbar ist. Der Fehler über Jason oder sonst was ist ja keine Stack Tracer oder sonst was rüber fliegt. Man kann das dann auch erweitern, dass man zum Beispiel eine Fehler ID mit gibt, womit der Benutzer sich an einen Support findet wenden kann, der in den Log Meldungen dann auch genau den Ablauf findet und direkt irgendwie vielleicht auch Auskunft geben kann. Das sind so Aspekte die man da nutzen kann, das waren jetzt mal so.
+
+17:24
+Ein bisschen Deep Dive, wo ihr seht, welche technischen Feinheiten man eigentlich in einem Backend berücksichtigen muss und ihr merkt daran, dass das ganze kann durchaus ein bisschen komplizierter sein, sprich, wir wollen die Komplexität reduzieren und das Backend unterteilen in verschiedene Teile, um halt diese ganzen verschiedenen Aufgaben, wo ich jetzt hier auch nur ein paar detaillierter dargestellt habe, sinnvoll zu platzieren und zuordnen.
+
+17:47
+Da hab ich jetzt mal folgenden Überblick vorbereitet, wo wir uns durchhangeln werden in diesem Teil der Vorlesung. Und zwar geht es zum einen darum, diese technischen Aufgaben, die ihr eben gesehen habt, sinnvoll zu verteilen.
+
+18:01
+Und da gibt es 2 Ansätze, die relativ populär sind. Sind sicherlich nicht alle. Es gibt wahrscheinlich noch mehr, aber das sind die, die ich zu einer Praxis meistens vorfinde. Das eine ist die Schichtarchitektur, wo man halt üblicherweise mehrere Schichten hat, die in einer bestimmten Aufreihenfolge sind, das Thema hatten wir auch schon bei dem Architekturprinzip.
+
+18:23
+Und es gibt dann das Thema Hexagonale Architektur oder die Alternative dazu, wo man auch eine Art Schichtung hat, aber eher so wie ihr seht, mit einem Kern in der Mitte und so eine Adapterschicht drumherum. Beiden gemein ist, dass man halt geschäftslogik irgendwo implementiert hat und auch klar gesagt hat, wo die Supplementieren ist. Bei der Hexagonalen Architektur im Kern hier bei der Schichtenarchitektur in der gleichnamigen Schicht der geschäftslogik Schicht und dann kann man aber sich die Frage stellen, wie strukturiere ich jetzt wieder um die Geschäftslogik und auch da gibt es 2 unterschiedliche Sätze Ansätze.
+
+18:58
+Das eine ist so Use Case basiert, indem man einfach Use Cases hat, die auf so ein domänenmodell arbeiten, was meistens relativ oder einfach nur ein Datenmodell ist, ist ein relativ einfacher Straight Forward Ansatz den wir kennenlernen werden und ein anderer Ansatz ist das taktische, die Idee wo man versucht das ganze wesentliche Objektorientierter zu adressieren, das sind so die 2 wesentlichen Punkte und da werden wir uns jetzt hier so Schritt für Schritt durchhangeln, damit wir dieses ganze Bild einmal gesehen haben, dass wir auch ein Verständnis für entwickelt haben.
+
+19:29
+Wie man das Backend strukturieren kann.
+
+19:32
+Gut.
+
+19:36
+Dann.
+
+19:38
+Fangen wir mit der Schichtenarchitektur an. Ihr seht hier oben so ein bisschen Überblick, wo wir uns da befinden. Die Schichtenarchitektur unterteilt jetzt das ganze Backend in verschiedene.
+
+19:49
+Schichten in einem glücklicherweise Fassaden oder Serviceschicht in eine Logikschicht und eine Data Access Schicht ne Fassadenschicht bietet Schnittstellen nach außen an, sowohl zum Frontend als auch zur anderen Backend Systemen.
+
+20:03
+Und ruft dann die Logikschicht auf. Und da ist die Geschäftslogik drin und damit die implementiert werden kann, ruft sie Schnittstellen an, die die Datenzugriffsschicht zur Verfügung stellt, die wiederum den Zugriff auf die konkrete Datenbank oder Datenbanklösung Kapselt.
+
+20:18
+Dadurch hat man eigentlich schon mal eine grundlegende Verteilung der Aufgaben, wie wir sie auch schon mal eben gesehen haben bezüglich Datenmanagement bezüglich.
+
+20:27
+Exponisation oder Exposionierung von irgendwelchen Schnittstellen bis hin zur Geschäftslogik, da seht ihr, das ist schon mal relativ klar.
+
+20:33
+Und man sieht auch, man hat eine klare Aufrufabhängigkeit immer von oben nach unten, wo das Ganze dann entsprechend stattfindet.
+
+20:43
+Es gibt dann aber im Detail durchaus unterschiedliche Interpretationen. Was gehört Logic Logic Schicht, wobei?
+
+20:51
+Manche sagen in der Logikschicht, weil da das eine fachliche Entscheidung sein sollte und manche sagen, es sollte in der Fassadenschicht sein, es möglichst einfach und transparent zu haben. Das sind so wie sollen die Schnittstellen hier draußen formuliert werden, ist das im Wesentlichen.
+
+21:05
+Wird das hier gemacht, dass man explizit noch mal ein eigenes Datenmodell definiert oder macht das auch die Logikschicht und die Fassadenschicht oder Serverschicht? Ist wirklich nur ne reine?
+
+21:16
+Reine Technik dass man es über Netzwerkaufrufbar macht. Wo packt man die Sicherheit, also welche Autorisierungssachen getan werden sollen, da gibt es unterschiedliche Ansätze, wie man das letztendlich dann verteilen kann und es gibt auch unterschiedliche Schichtenarchitekturen natürlich, das ist jetzt die eine Interpretation, die wir bei uns auch viel in unseren Projekten angewandt haben.
+
+21:36
+Dass die Idee sieht, eine andere Beschichtung vor, die habe ich hier mal aufgeführt. Das ist auch Teil von einem Tactical DWD. Ich habe hier mal so das Bild was später noch mal kommt auch mal das nochmal gekennzeichnet, da hat man die User Interface, das ist natürlich nicht Teil des Backends, also das Frontend und dann das Backend ist unterteilt in so eine Applikationsschicht wo man im Prinzip den Zugriff auf die Domänenschicht bereitstellt und Domänenschicht ist ein Stück weit die die reine fachliche Logik, die das reine fachliche Modell.
+
+22:06
+Praxissystem Applikation schneidet das für den Sinne der Applikation? Welche Funktionalitäten werden wir nach draußen?
+
+22:14
+Gestellt hält auch keinen Zustand oder ähnliches. Das wird ist wirklich eine Art Zugriffschicht, wie wir es eben gesehen haben. Irgendeinen anderen Namen wie ihr seht und darunter sieht man so eine Infrastrukturschicht, die auch von der User Interface genutzt wird, wo technische Querschnittsdienste zur Verfügung gestellt werden, UI Library, Persistenz oder ähnliches ist eine Alternative, die ich jedoch Vollständigkeit halber auch mal darstellen sollte, aber auch dem ist gemeint, dass man halt immer eine klare Aufrufbedingung natürlich hat.
+
+22:45
+Und dann kommen wir zu guter Letzt auch noch zu der hexagonalen Architektur, die momentan noch sehr beliebt ist und auch bei uns immer beliebter wird.
+
+22:56
+Ich sitze hier noch mal im Überblick. Das ist eine zweite Möglichkeit, technische Aufgaben zu verteilen ist auch ein Stück weit eh nicht zu einer Schichtenarchitektur, insofern, dass man hier drin das als eine Schicht bezeichnen kann, mit einer äußeren Schicht drumherum, deswegen wird es häufig auch so Anion Architecture genannt, also Zwiebelarchitektur mit verschiedenen Schichten im Kern.
+
+23:14
+Gesagt, ganz klar Verortung der Geschäftslogik hier drin ist und die Idee bei der Hexagonalen Architektur ist auch das Prinzip der Trennung von Zuständigkeiten wirklich auf die Spitze zu tragen und zu sagen, dieser dieser Application Corso idealerweise gar keine Technik haben.
+
+23:30
+Nichts. Ne, das ist so ein Stück weit der die Idee kann man natürlich auch im im Sinne eines Trade Offs ein Stück weit variieren, inwiefern man das wirklich so durchsetzen will, sind zum Beispiel springoritation Technik oder nicht, das ist so eine Frage.
+
+23:44
+Die man, wo man häufig gesagt hat, das ist eigentlich egal, das ist fast schon das, was wir nullsoftware ja auch nennen nach dem Softwarekategorien. Das sollte eigentlich akzeptiert sein, aber heutzutage Cloud Architektur und ist das zum Beispiel gar nicht mehr so. Springen ist halt nicht so performant, im Startup zum Beispiel eine Spring Applikation Springboot zu starten, das dauert noch schon mal 10 Sekunden oder so, das ist in einer skalierbaren Welt, wo man mehrere Instanzen von einem Backend laufen lässt, in einem Cloud flexibel, die auch mal abrauchen dürfen und einem Failover nicht mehr akzeptabel da.
+
+24:20
+Wirklich schnell sein. Deswegen sind Dinge wie Quarkos geboren, als alternative Komponenten, Rahmen, rahmen die Tiere, wenn ihr wollt, die auch den Java Code wirklich in nativen Code übersetzen, wo man.
+
+24:34
+Guten Startup Zeiten von unter einer Sekunde hat dabei so ein unter einer halben Sekunde und teilweise sogar unter 100 Millisekunden. Das geht rasend schnell, das sind aber alle Rednerionen und andere Dinge, das heißt, wenn man da flexibel wechseln können möchte auch in Zukunft, wer weiß was die Kürze umbringt, dann müsste man da sagen, dass es dann nicht mehr teils application.
+
+24:57
+Umgeben wird der dann von dieser Adapterschicht und die Adapterschicht unterteilt man auch in 2 Unterschichten sozusagen oder teilt die in der Mitte durch. Das eine ist die Primary oder Driving Adapters.
+
+25:09
+Oder incoming Adapters eingehen Adapter, das heißt das sind die Sachen, die von außen unseren Application Core aufrufen wollen über Rest über WSDL, über Graved oder über eine Message, die reinkommt oder selber durch einen Batch gesteuert, was auch immer.
+
+25:24
+Das kann alles Mögliche sein, da ist man flexibel und bietet für jede dieser Dinge einen eigenen Adapter an, der dann einen Port aufruft. Vom Port ist dann letztendlich ein Nichterseits ein Schnittstelle angeboten und implementierte Schnittstelle von Application Core, in der eingehende Adapter dann aufruft, relativ simpel und entspricht in dem Sinne, wenn man das jetzt die Service Schicht wäre und dass die Logikschicht so der Schichtenarchitektur.
+
+25:55
+Relativ straight Forward, deswegen würden wir auch mal von Adaptern und.
+
+26:03
+Der wesentliche Unterschied zwischen Schichtenarchitektur kommt jetzt in dem zweiten Teil, in dem Secondary Driven oder Outgoing Adapters, wo das wirklich die ausgehenden Aufrufe sind. Das heißt, wenn ich jetzt Daten mir holen will, das heißt, der Chor selber braucht auch an Daten aus anderen Systemen.
+
+26:17
+Er will eine Nachricht verschicken oder ähnliches. Dann ist da der Unterschied, dass der Chor auch in diesem Fall einen Port definiert, also eine Schnittstelle definiert, aber wirklich nur definiert, das heißt, er exportiert nur die Schnittstellen Definition.
+
+26:31
+Also eine angeforderte Schnittstelle. Und diese Schicht gibt dann die Implementierung davon ne und auf die Weise seht ihr, dass die Abhängigkeitsrichtung immer nur von außen nach innen sind.
+
+26:44
+Das ist der wesentliche Unterschied zu zu der Schichtenarchitektur und man kann auf die Weise auch wesentlich flexibler das ganze gestalten. Man ist immer nicht nur auf Persistenz als Ausgehendes beschränkt, sondern da kann alles mögliche sein und dadurch kann man es auch beliebiger erweitern.
+
+26:59
+Das Hexagon als das Teil des Namens ist einfach nur wegen der Darstellung gewählt. Bitte nicht dran denken, dass man jetzt irgendwie nur 6 Schnittstellen, die ihr dargestellt haben sollte, sondern da gibt es beliebig viele. Ne, das ist ganz wichtig zwischen und ihr merkt dadurch ne durch diese Flexibilität und da starken Trennung von Zuständigkeiten bietet das Muster gegenüber einer Schichtenarchitektur schon noch mal so ein paar Vorteile, die es sehr beliebt machen. Unter anderem findet ihr Netflix hier so einen schönen Artikel.
+
+27:29
+Der veröffentlicht wurde, wo Netflix mal dargestellt hat, wie es ZB.
+
+27:35
+Eine Geschäftslogik aus einem bestehenden Monolithen Rausgelöst hat extrahiert hat, und zwar wirklich nur die Logik und dann halt mit Adaptern gearbeitet hat, wo sie erstmal noch die alten Schnittstellen aus dem alten Monolithen aufgerufen hat und die Daten zu speichern und zu holen. Später hat man dann die Daten migriert, eine eigene Datenbanklösung und musste nur den Adapter anpassen auf einen db Adapter um dann halt die Daten der eigenen Datenbank zu speichern und so konnte man flexibel das ganze evolutionär migrieren.
+
+28:04
+Und das zeigt so ein bisschen die Flexibilität, auch später in in einem weiteren Entwicklung des Backens, die man durch diese starke Trennung von Zuständigkeiten bekommt.
+
+28:15
+Nachdem wir jetzt die 2 grundlegenden Arten kennengelernt haben, wie wir die technischen Verantwortlichkeiten verteilen können, ne mit Schichtenarchitektur und einmal die exagonale Architektur, gucken wir uns jetzt an, wie man die Fachlichkeit da drin strukturieren kann und fangen wir auch hier erst mal mit dem einfachen an und gleichen Kombination mit der Schichtenarchitektur, damit jemand ein Gesamtbild bekommt, wieso ein Backend Struktur ausschauen kann, was ihr hier seht ist im Wesentlichen.
+
+28:44
+Die Komponenten, die wir gebildet haben, der fachliche Komponentenschnitt und darüber legen sich jetzt die verschiedenen Schichten, also die Datenzugriffsschicht.
+
+28:55
+Dort hat man dann üblicherweise auch das Datenmodell abgebildet mit MTTS, die sich dort drin sind und man die Entities zu bekommen. Ne, also um die zu holen aber auch zu schreiben und zu speichern.
+
+29:08
+Führt man in der Regel noch ne weitere Subjekte ein oder ein weiteres Element, das ist das sogenannte Dow Data Access Object. Beides werden wir uns gleich auch noch mal genauer anschauen, dass letztendlich diese Entity verwaltet und darüber liegt dann wie gesagt die Geschäftslogik und in diesem Use Case Driven Ansatz ist es jetzt einfach die Geschäftslogik in Use Cases bekapselt, das heißt man versucht.
+
+29:33
+Kohärente Zusammengehörige Funktionalität in einem Artefakt zusammenzugliedern da was dann eine Schnittstelle draußen anbietet, da ist im wesentlichen Dinge sein können, wie zum Beispiel einen Auftrag platzieren.
+
+29:47
+Einen Auftrag stornieren, das kann sein, dass man.
+
+29:51
+Keine Ahnung, Lagerhaltung optimieren möchte oder den Lagerstand kontrollieren möchte. All diese Dinge sind.
+
+29:57
+Mögliche Use Cases in unseren Hochschulinformationssystemen werden es halt Dinge wie ein Praktikum anlegen, einen neuen Lehrplan erstellen, für ein Semester in Lehrplanverwaltung den Mensaplan anlegen und all diese Dinge, das sind einzelne Teile, die typischerweise gebündelt werden. Meistens ist so ein Use Case Artefakt dann halt auch ein Stück mehr, dass man dort versucht die gemeinsame Funktionalität zu tun, rein zu tun, also gerade wenn es um die Verwaltung zum Beispiel von The Mensaplan geht, dass man.
+
+30:28
+Anlegen kann, sondern dass man ihn auch löschen kann und verändern kann, lesen kann.
+
+30:33
+Da drüber gibt es dann die Fassadenschicht oder Serviceschicht, teilweise auch genannt, wo man Services hat als Artefakte, die dort platziert sind und die auf die Use Cases zugreifen und die nach draußen und die Außenwelt exponieren.
+
+30:47
+Und üblicherweise würde man jetzt nicht einfach einen Use Case aufrufen und die Entitäten da rausholen und die Identitäten zurückgeben an das Frontend und ähnliches, weil das letztendlich.
+
+31:00
+Verletzungen ein Stück weit das Geheimnis Prinzip ist, als auch Probleme darstellt, technischer Natur häufig, weil die Entität ja ein viel größeres Geflecht sein können und man halt da auch ein Stück weit die Kontrolle verliert und deswegen gibt es da drum hier auch noch mal sogenannte Datentransferobjekte einzuführen, die letztendlich ein eigenes Datenmodell darstellen, was nach außen gegeben wird, das ist ein Stück weit querschnittlich über beide Schichten, insofern, dass beide Schichten das verwenden, teilweise werden die Daten.
+
+31:33
+Data Transfer Objects nur in der Fassadenschicht hier gemappt und genutzt und die Geschäftslogik fungiert nur auf Authentizitäten oder funktioniert nur auf Entitäten, wird darin implementiert.
+
+31:45
+Teilweise gibt es aber auch Ansätze. Wie gesagt, es gibt Unterschiede, wie man die Aufgaben verteilt, dass das Mappen von Entitäten diese Datentransferobjekte unten geschieht auch die Geschichte, wie kann ich datentransferobjekte modellieren, welche Traders gibt es da werden wir uns gleich noch mal genauer anschauen, das ist aber im wesentlichen dann für eine Komponente schon alles, das sind die Artefakte wie man das Backend für eine fachliche Komponente strukturiert und das macht man dann halt bei jeder Komponente konsistent und ähnlich, so die Idee.
+
+32:17
+Wie spielt das Ganze zusammen? Ich habe es eben schon umgangssprachlich gesagt, hier mal ein Beispiel.
+
+32:23
+Von.
+
+32:25
+Einem von einem anderen Beispielsystem, was in den vorherigen Vorlesungen verwendet haben, wo es darum geht, dass man halt eine BG Verwaltung hat für die Wohngemeinschaft und dort könnte man zum Beispiel so einen BG Service haben, da könnte man alle WG s finden, der hat das einfach an einen BG Maintenance Use Case weitergegeben um die zu holen.
+
+32:46
+Dass da hat dann.
+
+32:49
+Wurde dann als nächstes aufgerufen. Hat die Datenbankabfrage gemacht und das Ganze ging dann zurück und hier in dem Schnitt ist es dann so, dass der WG Service dann letztendlich das Mapping gemacht hat.
+
+32:59
+Das ist jetzt ein simpler Fall hier zu veranschaulichen. Natürlich kann man hier oben in dem Service noch weitere Orchestrierungen stattfinden.
+
+33:08
+Genauso auch hier in dem Maintenance Use Case kann noch mehr stattfinden und hier können auch andere Systeme zum Beispiel aufgerufen werden. Über AP is auch das ist möglich.
+
+33:20
+Genau und DTOS auch hier wie gesagt unterschiedlich gehandhabt. Teilweise wird es auf Use Case Ebene gemacht, teilweise auf Service Ebene und.
+
+33:28
+Üblicherweise macht man diese DTLDTOS. Das sind häufig sehr ähnliche Abbildungen von Identitäten, aber halt schon noch mal eine Abstraktion davon, teilweise aber wirklich baugleich. Wir wenden uns jetzt im Folgenden die einzelnen.
+
+33:44
+Artefakte auf den verschiedenen Ebenen anschauen und hier seht ihr oben jeweils auch, wo wir uns befinden.
+
+33:52
+Hier jetzt bei Identitäten ein Daten zudurchschicht und wir seht Entitäten in diesem Modell sind üblicherweise ein reines Datenmodell. Hier seht ihr keine Methoden, sondern wirklich nur Attribute und Assoziationen zu vielleicht anderen Entitäten oder zu Kind Entitäten und in der Regel wird das auch so eingehalten. Das ist die simpelste Regel, dass man sagt, da ist keinerlei Geschäftslogik und man legt es wirklich rein anämisch, wie man letztendlich sagt an, also blutleer. Es ist wirklich ein reines Datenmodell, trotzdem haben.
+
+34:23
+Die natürlich einen Lebenszyklus.
+
+34:26
+Durchaus mal angelegt, verändert, gelöscht werden, haben auch dazu häufig eine Identität, mit der man die natürlich finden muss, sowohl in fachlichen Schlüssel und auch.
+
+34:39
+Lebens, weil der fachliche, dass er vielleicht zu komplex ist oder zu aufwendig zu verwalten oder sich vielleicht auch mal ändern kann, wie zum Beispiel ein E-Mail-Adresse.
+
+34:51
+Genau und bezüglich des des Anämischen Datenmodells vielleicht auch noch als Ergänzung. Es gibt auch dort Abwandlungen, dass man zum Beispiel sagt, ne Entität.
+
+35:03
+Kann Methoden anbieten und damit auch Logik, sofern es zum Beispiel das lawof.de Mieter einhält. Also wirklich nur auf den eigenen Attributen plus auf den Methoden von den benachbarten oder assoziierten Entitäten, dann arbeitet.
+
+35:18
+Aber nicht weitergeht, kann man so definieren. Ich find es halt ne pragmatische Lösung um es auch ein bisschen objektorientierter zu gestalten, aber es ist nicht nur so ne ganz simple Regel, das heißt Entwickler müssen es auch verstehen, müssen es richtig anwenden. 2. Neue Fehlerquelle ist halt auch hier ne Trade off Entscheidung wie weit man da gehen möchte.
+
+35:38
+Was ist jetzt mit den Assoziationen zu Entitäten von anderen Komponenten? Könnt ihr euch selber mal die Frage stellen, wie würdet ihr das handhaben?
+
+35:47
+Zunächst einmal muss man feststellen, es ist halt notwendig, ne, wir haben halt einen häufig irgendwie Beziehungen, was weiß ich sei es zu zu irgendwie einer Kundenobjekt oder das heißt zu einem zu einem Lager in dem.
+
+36:01
+Ne ne Ware liegt im Produkt liegt es gibt einfach fachlich durchaus Situationen, das lässt sich einfach nicht von Hand weisen. Typischerweise versucht man es aber dann halt nicht so zu machen auf der Ebene um das nicht eng zu koppeln. Ansonsten habe ich ein riesiges Datenmodell über alle fachlichen Komponenten, dass man sagt man entkoppelt es durch eine Referenz und das kann halt wie gesagt diese technische ID sein oder halt ein fachlicher Schlüssel und darüber habe ich das dann auch wirklich entkoppelt. Alternativ kann man auch drüber nachdenken dort extra.
+
+36:32
+Interfaces einzuführen für Entitäten zum Beispiel Read only, die hat also keine Setter anbieten oder keine Methoden, die Daten verändern, einfach um die Datenhoheit zu gewährleisten. Die Datenhoheit ist einer der Hauptgründe, auch wie soll man das versucht zu vermeiden, das ist schon eine relativ enge Kopplung, nicht nur von dem Wissen, was Überschwappt, sondern auch über die Möglichkeit, wirklich Daten ineinanderitäten zu ändern, die eventuell dann auch untergeschrieben werden auf Basis von Veränderungen, die aus den anderen Komponenten kommt, worst Case sinaio.
+
+37:02
+Man hat völlig den Überblick verliert, wer eigentlich welche Daten ändert. Das ist ja gerade hier die Idee bei der Komponentenorientierung, dass man diese strikte Trennung und kapselung halt einschätzt.
+
+37:15
+Gut, kommen wir zu den Artefakt. Die Frage war ja, wie komme ich jetzt an die Ethik dran, damit ich damit arbeiten kann und das passiert halt über dieser Data Access object patterns ne.
+
+37:27
+Da habe ich dann letztendlich.
+
+37:30
+Einen dao winterface ne.
+
+37:33
+Mit den üblichen Methoden wie zum Beispiel Find ID, find All find Buy Update und Lead. Das sind so die klassischen Craft Methoden und das wird dann irgendwo implementiert und nutz bei der Implementierung irgendeine Persistenz Library wie zum Beispiel High by Nate, Eclipse Link Hypernate enden im dotnet Bereich und so weiter und sofort Ziel ist es von diesem Pattern, das ist wirklich ein Entwurfsmuster, dass man die Persistenz auch austauschen könnte. Also wenn ich einen anderen datastore habe, Low xq ldatenbank vielleicht sogar im extremen Fall oder einfach nur einen Dateisystem wo ich irgendwie Dateien ablege, dann kann ich das halt mit dem Pattern austauschbar machen, hab dann.
+
+38:12
+Flexibilität welche Lösung ich wähle.
+
+38:15
+Ist auch meistens gegeben. Man muss aber auch da aufpassen im im im Detail.
+
+38:23
+Hat man dort, muss man aufpassen, dass die Operation, die man anbietet, weil das sind hier so die Standardoperationen, aber die werden natürlich erweitert durch bestimmte Queries, ne, wenn ich bestimmte Aufträge aus einem Land haben will, oder ich möchte alle offenen Aufträge, die mir zugewiesen sind.
+
+38:37
+Das sind Currys, die auf der Datenbank abgelaufen werden. Und das kann üblicherweise nicht durch jede Implementierung.
+
+38:45
+Performant implementiert werden. Da muss man dann schon schauen, ob das überhaupt möglich ist. Das ist die einzige Einschränkung bezüglich der Anwendbarkeit, würd ich sagen.
+
+38:54
+Die Vorteile, die sich dadurch ergeben, sind wirklich die, dass man diese Flexibilität bekommt. Man hat auch eine klare Trennung von Zuständigkeiten, ne hier die Simplementierung kümmert sich genau um die konkrete und persistenzlösung und im Corpelt dann davon Nachteile.
+
+39:11
+Ist ein Stück weit, dass der ER mapper ja eigentlich auch schon so etwas versucht. Wenn man jetzt wirklich relationale Datenbank hat. Aber da liegt genau der Punkt ne. Also wenn ich jetzt nenne nen Airmaper nutze und auch ne relationale Datenbank, dann fühlt sich teilweise das also wie man so schön sagt umgangssprachlich doppelt gemoppelt an als würde man so 2 Abstraktion hintereinander und in gewisser Weise ist das auch so, weil der er Mapper ermöglicht es mir so ein halber net auch die konkrete relationale Datenbank einfach auszutauschen, das sind aber 2 unterschiedliche Ebenen wenn ich wirklich versuche dann halt eine ganz andere Lösung dahinter zu tun.
+
+39:46
+Wird es dann nicht ganz so einfach, dann würde ich auch keine ehrenamtlich mehr einsetzen.
+
+39:52
+Dieses Data Access Object Pattern ermöglicht es auch ganz schön, den Aspekt zu adressieren, den wir bisher noch nicht so genau angeschaut haben oder nicht im Detail geschaut haben, nämlich diese datenabhängige Autorisierung. Das lässt sich Dortmund nicht ganz schön verankern und auch transparent behandeln.
+
+40:13
+Und das ist so eine schöne Erweiterung, finde ich.
+
+40:17
+Dort Verankere in diesem Dow, dann liefert mir diese Stau ne wenn ich styleplementiert habe auch nur die Entitäten zurück, die ich als angemeldete User überhaupt sehen darf oder verändern darf. Ne, das ist letztendlich so die Idee, das heißt ich muss das irgendwie hinkriegen, dass wenn ich hier ein find all aufrufe oder auch ein Find bei id ich, dass dieses Dao prüft, ob ich dazu überhaupt berechtigt bin, das ist da letztendlich die Idee und das kann man halt wirklich generisch implementieren.
+
+40:47
+Und das hatte ich auch schon in der Vergangenheit gesehen. Häufig macht man das zum Beispiel, indem man bei so einer Entität halt auch eine Interface definiert, dass diese Entität dann implementieren kann, das gibt dann halt so ein Get restricted Attribute zurück, das heißt, das Attribut, was sagt, wie es eingeschränkt ist, also ein bestimmtes zum Beispiel in den Abteilungskürzel könnte das sein als Wert ergibt die Sensität zurück, dagegen kann ich dann prüfen, ob ich selber.
+
+41:15
+Das Recht habe auf diese Abteil oder zu dieser Abteilung gehöre und damit auch die Sentität sehen darf.
+
+41:21
+Dazu muss die Implementierung allerdings natürlich durch diese querschnittliche Element zugreifen, so eine User Session Provider ne, also irgendwie ein Singleton muss da Zugriff drauf haben, das kann man in Frameworks ganz gut implementieren.
+
+41:35
+Das heißt, das ruft das auf und holt sich die Usersession und die Usersession gibt dann halt die Attribute zurück, die auf die der Benutzer das Recht haben kann.
+
+41:43
+Und dann kann ich halt zum Beispiel bei find by d, ich hol mir das Objekt aus der Datenbank, ich frag das Objekt, was ist dein restricted Attribute und ich kann dann halt auch bei diesem in der User Session die die die die die erlaubten Attribute abfragen vergleicht ob das passt. Wenn es passt gebe ich es zurück. Ansonsten gebe ich Neid zurück oder werfen Exception, das ist dort letztendlich die Idee.
+
+42:07
+Und man kann es sogar soweit generisch implementieren, dass man wirklich Currys erweitert. Also wenn ich jetzt hier einen find all habe, kann ich in dieser down Implementierung immer automatisch eine worklos Antwort hinzufügen, eine Bedingung in der SQL Abfrage zum Beispiel oder auch bei anderen Lösungen ähnlich wo ich genau diese Suchparameter einschränke und aus dieser Session die erlaubt Attribute hole und das dann einschränke das Attribut auf der Entität wo es gespeichert ist. Also den Attribut, dass das irgendwo in dieser Liste von erlaubten Abteilungskürzel jetzt in diesem Beispiel ist.
+
+42:44
+Das funktioniert so lange gut, solange man halt ein bestimmtes Set auch nur erlaubt. Ne. Also wenn es jetzt keine Ahnung üblicherweise Benutzer hat immer nur eine Abteilung zu der zugehört, da gibt es vielleicht ein paar super User, die haben vielleicht 1020 Abteilungen, geht auch noch, dann ist das jetzt eine SQL, zum Beispiel eine Einschränkung einer Inklusion mit 20 Attributen, das kriegen die meisten Datenbanken dann auch noch mit entsprechenden Indizes gut hin, schwieriger wird es dann, wenn ich das wenn das mehr wird muss.
+
+43:15
+In der Praxis auch tatsächlich mal passiert. Bei einem Kunden hatten wir den Fall.
+
+43:21
+23 Jahre, nachdem wir das eingeführt haben, das System, das es schon im Betrieb war, das ist ne ne Änderung gab in der Organisation, dass die so Shared Service Center eingeführt haben, das waren dann 3 Shared Service Center weltweit.
+
+43:33
+Diese Standardaufgaben im System übernommen haben, das heißt, das Waren typischerweise dann Mitarbeiter, die hatten Rechte auf wesentlich mehr.
+
+43:45
+Abteilungen auch nicht nur Abteilungen, auch teilweise unterschiedlichen Ländern.
+
+43:50
+Sogar Abteilungen, so dass dann die Query die Resultierende plötzlich riesengroß wurde. Wenn das dann passiert, dann ist man dagegen natürlich nicht gewappnet, dann kriegen plötzlich die Performance in den Chat Service Center in den Keller, hat teilweise auch sogar Performance Auswirkungen auf die anderen Abteilungen gehabt, das ist so ein Beispiel wo so eine Intransparenz halt auch.
+
+44:11
+Damit rechnet man nicht mehr unbedingt ne, weil das lief alles. Das läuft dann im Hintergrund ab, das haben nicht alle immer auf dem Schirm und plötzlich merken, ah ja, das gab es ja auch noch, diese diese generischen Implementierung und dann muss man halt da entsprechend tätig werden und ne andere Lösung finden oder die Lösung erweitern haben wir auch in den Griff bekommen, aber das ist mal so ein Beispiel aus der Praxis wo halt so Magic die im Hintergrund passiert auch vielleicht mal unerwartete Probleme in der Produktion im Betrieb verursachen kann.
+
+44:42
+So, und wir kommen jetzt zum eigentlichen Kern, den Muse Cases, also der, wo wirklich die Geschäftslogik implementiert ist. Und ihr seht es in dem Beispiel, die das Prinzip dahinter ist relativ.
+
+44:55
+Einfach, das sind wirklich halt ne Bündelung von von Geschäftslogik in einem ad Fakten namens Use Case, das typischerweise zusammengehöriger.
+
+45:06
+Operationen mit hoher Kohäsion bündelt.
+
+45:10
+Zum Beispiel Halt, wenn man Auftrag anlegen möchte oder auch den Auftrag mit Default werten für den Benutzer oder den Kunden anlegen möchte. Statussendungen machen will. Bündelt man das dann in einem Use Case, so dass idealerweise fachliche Regeln, die zusammen gehören, auch dort drin implementiert sind. Das ist die hohe Kohäsion, weil diese fachlichen Regeln, und das ist dann wichtig, dass man das gemeinsame Verständnis auch mit dem Fachbereich hat, sollten dann halt auch gemeinsam geändert werden oder in Beziehung stehen, das ist
+
+45:41
+und dazu gehört es dann natürlich auch, diese diesen Use Case wirklich.
+
+45:47
+Gut zu strukturieren und zu schneiden ist eine Designaufgabe an sich. Das ist häufig das, was dann halt nicht ganz so akkurat gemacht wird. Häufig wird es doch relativ datenzentrisch gemacht, da kommen wir gleich noch dazu, was vielleicht nicht ganz immer dem besten Vorgehen entspricht, man sollte es wirklich versuchen in dem Sinne zu bündeln, wie es halt auch der Fachbereich machen würde, wo der Fachbereich auch gemeinsame Änderungen sehen würde, das wäre ein guter Schnitt.
+
+46:15
+Der Use Case ist an sicher, dass man auch gar keine technischen Abhängigkeiten nutzt. Diese Dao Schnittstelle, das ist erstmal frei von irgendeiner Technik, das sind einfach reine Methoden die er aufrufen kann um Entitätsobjekte wirklich zu bekommen oder er nutzt Halt Use Cases von anderen Komponenten oder auch Services und können die dann entsprechend orchestrieren und kann dort in dieser Ebene natürlich das Ganze auch noch dynamischer gestalten, gerade wenn die Geschäfte relativ dynamisch dynamisch sind und vielleicht auch mal sich ändern.
+
+46:47
+Sollen, ohne dass man jedes Mal dann die Implementierung ändert, kann man auch über sowohl engions nachdenken.
+
+46:55
+Das ist dann, das sind regeln, die man halt irgendwo in einer Domain specific language halt auch konfigurierbar im System ablegt.
+
+47:02
+Und die man auch zur Live Zeit ändern kann. Ein Beispiel dafür sind so.
+
+47:09
+Entscheidungsbäume, die man zum Beispiel modellieren kann oder Entscheidungstabellen, wo verschiedene Bedingungen geprüft werden zur Laufzeit und man auf die Weise zum Beispiel bestimmen kann, welches welche Abteilung es für einen Auftrag zuständig und.
+
+47:26
+Kann dann entsprechend das Routen. Das wäre so ein Beispiel dafür, das kann man dynamisch machen, dann kann man es auch dynamisch kultivieren.
+
+47:35
+Mehr gibt es dazu aber eigentlich gar nichts zu sagen. Das heißt, ihr seht an diesem sehr einfachen Vorgehen, wie man Use Cases strukturieren kann oder wie man die Geschäftstheorie strukturieren kann. Das ist letztendlich etwas, was es wirklich stark vereinfacht, auch für den Entwickler.
+
+47:49
+Klar, den Schnitt für Use Cases zu finden ist noch mal ne Herausforderung. Dann allerdings arbeiten die Use Cases rein auf Datenmodellen von Entitäten und die Logik wird dort implementiert. Das Vorgehen ist ein relativ straight Forward.
+
+48:02
+Und man muss nicht so viel darüber nachdenken.

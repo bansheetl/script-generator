@@ -1,0 +1,109 @@
+Herzlich willkommen zur nächsten Videoeinheit. In dieser Lektion werden wir uns von methodischen Aspekten weg bewegen und uns auf die Architektur konzentrieren, mit der wir uns bereits eine Weile beschäftigt haben. Wir werden uns nun dem technischen Bereich zuwenden, was für einige von euch möglicherweise interessanter ist als reine Methodik. Wir beginnen mit dem Backend. Zur Erinnerung, das Backend wird klassischerweise als ein Informationssystem in der sogenannten dritten Schicht entworfen, die auch als Persistenzlösung eine Datenbank beinhaltet. 
+
+Wir werden uns genauer damit befassen, welche Optionen es dafür gibt. Das Backend dient als Bindeglied zwischen dem Frontend, mit dem der Benutzer arbeitet und auf Daten zugreift. Es hat zahlreiche Aufgaben, mit denen wir uns in dieser Videoeinheit befassen werden. Wir werden betrachten, wie das Backend weiter unterteilt werden kann, nicht nur in fachliche Komponenten, sondern auch in technische Aspekte.
+
+Die technische Architektur des Backends gibt uns den Rahmen vor. Nachdem wir eine fachliche Architektur entworfen haben, müssen wir diese nun in der technischen Architektur des Backends umsetzen. Es gibt noch einige offene Fragen, denen wir uns näher widmen müssen. Beispielsweise müssen wir uns darüber Gedanken machen, wie wir eine technische Komponente abbilden, integrieren und letztendlich implementieren können.
+
+Das Backend hat vielfältige Aufgaben, darunter die Bereitstellung von Funktionalitäten über Schnittstellen, die Implementierung der Geschäftslogik und die Sicherstellung der Datenintegrität durch Persistenz und Datenverwaltung. Es umfasst auch Aspekte wie Transaktionen, Validierung, Sicherheit, Fehlerbehandlung, Betrieb, Monitoring, Logging und die Integration von Drittsystemen.
+
+Wir werden uns nun genauer mit einigen dieser Aufgaben und Prinzipien auseinandersetzen, wie beispielsweise Sicherheit, Transaktionen und Fehlerbehandlung. Dabei ist es wichtig, eine klare Architektur zu definieren, Fehler transparent zu handhaben und aussagekräftige Fehlermeldungen bereitzustellen, um eine effektive und benutzerfreundliche Fehlerbehandlung zu gewährleisten.
+Um unter spezifischen und unspezifischen Verhalten zu unterscheiden, ist es wichtig, erst einmal die spezifischen Zeiten zu klären, in denen das Verhalten explizit spezifiziert ist. Ich spezifiziere das Verhalten als das, was tatsächlich mit einem bewussten Spiel implementiert wurde, weil es so gefordert wurde.
+
+Es gibt normale Ergebnisse, die zurückgegeben werden, aber auch spezifische Fehler wie einen doppelten Benutzernamen oder eine Überschreitung eines bestimmten Limits bei einem Kauf. Unspezifiziertes Verhalten kann dann zu unspezifischen Fehlern führen, wie zum Beispiel wenn die Datenbank oder das System nicht verfügbar sind oder wenn ein simpler Programmierfehler vorliegt, der zu einer Ausnahme führt. Diese Dinge können auftreten und müssen entsprechend unterschiedlich behandelt werden.
+
+Es ist wichtig, eine transparente Fehlerbehandlung in einer Art Sicherheitsfassade vor dem eigentlichen Backend zu haben, die Fehler abfängt und dekoriert, um sicherzustellen, dass generische Fehlermeldungen zurückgegeben werden und übertragbar sind. Man kann beispielsweise eine Fehler-ID hinzufügen, mit der sich Benutzer an den Support wenden können, um genauere Informationen zu erhalten. Diese Aspekte können genutzt werden, um die Qualität des Systems zu verbessern.
+
+Ein wenig Deep Dive zeigt, welche technischen Details in einem Backend berücksichtigt werden müssen und wie die Komplexität durch Unterteilung reduziert werden kann, um verschiedene Aufgaben sinnvoll zu platzieren und zu ordnen.
+
+Es gibt zwei populäre Ansätze, um technische Aufgaben zu verteilen: die Schichtarchitektur und die hexagonale Architektur. Die Schichtarchitektur unterteilt das Backend in verschiedene Schichten wie die Fassaden- oder Serviceschicht, die Logikschicht und die Data-Access-Schicht. Jede Schicht hat spezifische Aufgaben und Schnittstellen, um die Arbeitsweise des Backends zu strukturieren.
+
+Die Hexagonale Architektur dagegen bezieht den Application Core in das Zentrum und umgibt ihn mit Adaptern für eingehende und ausgehende Aufrufe. Diese Architektur ermöglicht eine starke Trennung von Zuständigkeiten und Flexibilität bei der Erweiterung und Entwicklung des Backends. Es ist wichtig, die Fachlichkeit strukturiert in das Backend zu integrieren, um klare Aufgabenverteilung und Flexibilität zu gewährleisten.
+In einem System ist es nicht nur möglich, Daten anzulegen, sondern auch sie zu löschen, zu verändern und zu lesen.
+
+Darüber hinaus gibt es eine sogenannte Fassadenschicht oder Serviceschicht, in der Services als Artefakte platziert sind und auf Use Cases zugreifen, um mit der Außenwelt zu interagieren.
+
+Normalerweise ruft man nicht einfach einen Use Case auf, holt die Entitäten heraus, und gibt sie an das Frontend zurück, da dies das Geheimnisprinzip verletzt und technische Probleme verursacht. Aus diesem Grund werden Datentransferobjekte eingeführt, die als eigenes Datenmodell nach außen hin fungieren und von beiden Schichten genutzt werden.
+
+Data Transfer Objects werden üblicherweise in der Fassadenschicht gemappt und genutzt, während die Geschäftslogik auf Entitäten basiert und in diese implementiert wird.
+
+Es gibt verschiedene Ansätze zur Verteilung von Aufgaben, wie das Mappen von Entitäten zu Datentransferobjekten, und wir werden uns genauer damit auseinandersetzen, wie man Datentransferobjekte modelliert.
+
+Das Data Access Object-Muster ermöglicht den Zugriff auf Entitäten und wird durch Methoden wie Find ID, Find All, Update und Delete implementiert. Es ist darauf ausgelegt, die Persistenz austauschbar zu machen und bietet Flexibilität bei der Auswahl der Persistenzlösung.
+
+Zudem adressiert das Data Access Object-Muster die datenabhängige Autorisierung, indem es die Datenhoheit gewährleistet und nur die Entitäten zurückgibt, auf die der angemeldete Benutzer berechtigt ist zuzugreifen und zu ändern.
+
+Der Kern des Systems liegt in den Use Cases, die die Geschäftslogik implementieren und zusammengehörige Operationen mit hoher Kohäsion bündeln. Es ist wichtig, ein gemeinsames Verständnis mit dem Fachbereich zu haben, um die fachlichen Regeln effektiv umzusetzen und zu verwalten.
+Das Strukturieren und Schneiden von Inhalten ist eine eigenständige Designaufgabe. Oftmals wird dies nicht so genau umgesetzt, wie es sollte. Oft wird der Fokus eher auf die Daten gelegt, was möglicherweise nicht immer dem besten Ansatz entspricht. Es ist empfehlenswert, sich zu bemühen, die Struktur so zu gestalten, wie es auch der Fachbereich tun würde, um gemeinsame Änderungen zu ermöglichen - das wäre ein effektiver Schnitt.
+
+Bei einem Use Case ist es wichtig, keine technischen Abhängigkeiten zu nutzen. Die DAO-Schnittstelle ist technologieunabhängig und bietet Methoden zum Abrufen von Entitätsobjekten. Zudem können Use Cases von anderen Komponenten oder Services genutzt und orchestriert werden, um eine dynamische Gestaltung zu ermöglichen, insbesondere in sich verändernden Geschäftsszenarien.
+
+Es ist möglich, Regeln in einer domänenspezifischen Sprache zu hinterlegen, die zur Laufzeit änderbar sind. Zum Beispiel können Entscheidungsbäume oder Entscheidungstabellen modelliert werden, um zu bestimmen, welche Abteilung für einen bestimmten Auftrag zuständig ist. Dies ermöglicht eine dynamische Routenführung.
+
+Dieses Vorgehen vereinfacht die Strukturierung von Use Cases und Geschäftstheorien erheblich, was besonders für Entwickler von Vorteil ist. Es kann jedoch eine Herausforderung sein, den richtigen Schnitt für Use Cases zu finden. Der Schwerpunkt liegt auf Datenmodellen von Entitäten, während die Logik in diesen implementiert wird, was ein geradliniges Vorgehen darstellt. Wenig Designaufwand bedeutet allerdings auch eine geringere Ausdrucksstärke und Nutzung von Objektorientierung.
+
+Zum Abschluss werden die Services in der Fassadenschicht betrachtet, welche dedizierte Schnittstellen für verschiedene Clients oder Backends bereitstellen. Typischerweise beinhalten diese Services eine transparente Zugriffsschicht, die beispielsweise durch Frameworks implementiert wird. Es werden auch mögliche Implementierungen wie Logging, Sicherheitsprüfungen und Transaktionssteuerung diskutiert. Die Konfiguration und Sicherstellung der Sicherheit sind entscheidende Aspekte dieser Architektur.
+
+Die Data Transfer Objects (DTOs) dienen der Aufbereitung von Datenmodellen zu benutzerfreundlichen Schnittstellen. Sie ermöglichen die Entkopplung der Komponentenschnittstellen von internen Datenmodellen und bieten eine klare Abstraktionsebene. Im Vergleich zur direkten Preisgabe von internen Datenmodellen bieten DTOs eine bessere Kontrolle über die übermittelten Daten und ermöglichen eine gezielte Datenübertragung mit klaren Erwartungen seitens des Nutzers. Es werden verschiedene Herangehensweisen zur Gestaltung von DTOs diskutiert, darunter datenmodellorientierte Ansätze und use-case-spezifische Designs. Die Wahl der DTO-Struktur hängt von den spezifischen Anforderungen des Systems ab.
+Umstrukturierter Text:
+
+Um die Datenmodellierung flexibler zu gestalten, können Datenübertragungsobjekte (DTOs) auch eigenständig Attribute enthalten, die für bestimmte Use Cases möglicherweise nicht relevant sind. Es wäre ratsam, nicht ausschließlich auf ein rein datenmodellorientiertes Vorgehen zu setzen, da dies dazu neigt, Entitäten unkontrolliert wachsen zu lassen und unnötig viele Attribute hinzuzufügen, die für bestimmte Verwendungszwecke eigentlich nicht erforderlich sind.
+
+Die Gestaltung eines Datenmodells für eine Schnittstelle erfordert explizites Design. Für einfache Komponenten wie Stammdaten kann dies relativ einfach sein, jedoch sollte man nicht einfach stumpf generieren, sondern sorgfältig über die Abstraktion nachdenken. Es sollte vermieden werden, dass beispielsweise riesige DTOs mit vielen unnötigen Attributen in verschiedenen Komponenten hin und her gereicht werden, was zu einer zu engen Kopplung führen kann.
+
+Bei der Kommunikation zwischen Komponenten ist eine lose Kopplung essentiell. Es sollte darauf geachtet werden, dass Abhängigkeiten in eine Richtung verlaufen, vorzugsweise zwischen Services, um eine effektive Entkopplung zu erreichen. Eine enge Kopplung zwischen Use Cases oder das direkte Übergeben von Identitäten sollte kritisch hinterfragt werden, da dies zu einem Verlust der Kontrolle über das Design führen kann.
+
+Bei der Schichtenarchitektur kann man verschiedene Ansätze verfolgen, um zu einer sauberen Komponentenarchitektur zu gelangen. Es ist wichtig, die Zuordnung von Verantwortlichkeiten für jede Komponente genau zu prüfen und sicherzustellen, dass die Abhängigkeiten sinnvoll sind. Durch eine dynamische Laufzeitüberwachung kann die Effektivität der Komponentenarchitektur überprüft werden.
+
+Beim taktischen Design von Domänenmodellen zielt man darauf ab, klare Bound-Contexts und eine gemeinsame Ubiquitous Language in jedem Kontext zu haben. Dies wird durch verschiedene Elemente wie Entitäten, Value Objects, Repositories und Aggregates umgesetzt. Value Objects dienen der fachlichen Beschreibung von Objekten, haben keinen Lebenszyklus und können fachliche Logik enthalten. Es gibt auch die Möglichkeit, Geschäftslogik in Entitäten zu implementieren, wobei Entitäten identifizierbare Objekte in der realen fachlichen Domäne sind. Es ist wichtig, die Geschäftslogik sorgfältig zu strukturieren und die Verantwortlichkeiten jeder Komponente klar zu definieren.
+Umstrukturierter Text:
+
+1:16:45
+Vielleicht kann ein Objekt nur einen Wert darstellen, während es in einem anderen Fall wirklich eine Instanz des Buches ist. Es besteht auch die Möglichkeit, dass ich gelöscht werde, falls das Buch beschädigt ist oder Ähnliches. Die verschiedenen Sichten und Designentscheidungen müssen entsprechend dem Kontext getroffen werden.
+
+1:17:05
+Genau.
+
+1:17:07
+Im RAK könnte beispielsweise die Adresse eines Lieferanten oder seine Kontonummer angegeben werden, ebenso wie eine Ratenposition mit einer maximalen Anzahl und einem Preis. Ein Beispiel dafür wäre eine Ratenzahlung, die besagt, dass ...
+
+1:17:21
+Wofür ...
+
+1:17:24
+... Hotelzimmer für mindestens 7 Tage und maximal 14 Tage.
+
+1:17:29
+Innerhalb dieses Rahmens habe ich diesen Preis festgelegt und kann dort eine Methode aufrufen, um den Preis für beispielsweise 9 Tage zu berechnen. Man könnte sicherstellen, dass nur Preise innerhalb dieses Bereichs angefragt werden, und somit den Gesamtpreis ermitteln. Dies sind die Arten von Fragen, die hier auftreten würden, und hier seht ihr auch nochmal ein Beispiel mit einem Kunden und seiner Adresse.
+
+1:17:53
+Nun kommen wir zu einem oft übersehenen wichtigen Objekt, den Aggregaten. Aggregaten sind gewissermaßen eine höhere Ebene als Entitäten und Wertobjekte, da sie normalerweise ...
+
+1:18:10
+Die fachlichen Komponenten des Kontextes repräsentieren und die nächste Ebene der Strukturierung darstellen. Sie dienen dazu, die Entitäten innerhalb des Aggregats in einen konsistenten Zustand zu bringen, indem sie bestimmte Regeln und Invarianten kapseln und gewährleisten.
+
+1:18:42
+Die Idee ist also, eine Art "Wächter" oder "Fassade" für dieses Gebilde zu schaffen, das die gebündelte Fachlogik enthält. Es ist wichtig, die richtige Kapselung auch hier mit dem Fachbereich abzustimmen.
+
+1:19:04
+Es ist auch wichtig, die Aggregaten richtig zu identifizieren. Es handelt sich normalerweise nicht um komplexe Netzwerke von Entitäten, sondern meist um 1 bis 2 oder maximal 3 Entitäten. Die Value Objects und die Wurzelentitäten können dann zusätzliche Regeln aufrufen. Man sollte jedoch sicherstellen, dass insbesondere zwischen Aggregaten nur Wertobjekte ausgetauscht werden, obwohl dies nicht genau festgelegt ist.
+
+1:19:48
+Im RK kann beispielsweise der Benutzer als Aggregat definiert werden, um die Prüfung auf passende Rechte und die Einhaltung von Regelungen sicherzustellen. Durch die Aggregaten wird die Logik definiert und aufgeteilt. Anstelle alle Berechnungen zu aggregieren, werden Operationen auf einzelne Line Items durchgeführt, um die Gesamtsumme zu ermitteln.
+
+1:21:28
+Ein weiteres Element sind Repositories, die den Zugriff auf Entitäten ermöglichen. Ähnlich dem DAO, aber abstrakter von konkreten Technologien. Ein Service ist eine weitere Entität, die für Orchestrierung oder Workflow zuständig ist und auf verschiedene Aggregaten oder Domain Services zugreift.
+
+1:22:57
+Die Verknüpfung des taktischen DB mit der hexagonalen Architektur schließt den Kreis zum ersten Teil. Man kann die Elemente des taktischen Designs mit den Aggregaten, Entitäten, Factories usw. modellieren, um ein reichhaltiges Domänenmodell zu schaffen.
+
+1:24:47
+Dieses Vorgehen spiegelt wider, wie der Fachbereich denkt. Es erfordert natürlich mehrere Iterationen, um dorthin zu gelangen, und wird nicht über Nacht erreicht.
+
+1:25:44
+Es gibt zwei grundlegende Entscheidungen beim Strukturieren des Backends. Zum einen muss man über eine technische Architektur nachdenken, wie man die technischen Aufgaben in Unterelemente aufteilen kann. Zum anderen gilt es, die Struktur in der Fachlichkeit zu beachten und verschiedene Wahlmöglichkeiten zu evaluieren.
+
+1:26:42
+In Fällen, in denen eine starke Differenzierung und gute Lieferfähigkeit erforderlich sind und die Privatbarkeit eine wichtige Rolle spielt, kann eine Kombination mit einer hexagonalen Architektur sinnvoll sein.
+
+1:27:00
+Als nächstes werden wir uns mit der Persistenz auf einer tieferen Ebene befassen.
