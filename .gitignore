@@ -1,0 +1,8 @@
+.DS_Store
+input
+output
+.venv
+.vscode
+output_slides
+script_generator
+__pycache__
