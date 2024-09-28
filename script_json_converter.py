@@ -1,13 +1,7 @@
 import sys
 import os
 import json
-from openai import AzureOpenAI
-
-client = AzureOpenAI(
-        api_key=os.environ.get('OPENAI_API_KEY'),
-        api_version="2024-02-01",
-        azure_endpoint=os.environ.get('AZURE_OPENAI_ENDPOINT'),
-    )
+import embeddings
 
 def main():
     if len(sys.argv) != 2:
@@ -31,7 +25,7 @@ def main():
             {
                 "id": idx + 1,
                 "text": para,
-                "embeddings": client.embeddings.create(model="text-embedding-ada-002", input=para).data[0].embedding
+                "embeddings": embeddings.generate_embeddings(para)
             } for idx, para in enumerate(paragraphs)
         ]
     }

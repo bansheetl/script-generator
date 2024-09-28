@@ -6,3 +6,4 @@ output
 output_slides
 script_generator
 __pycache__
+config.properties
