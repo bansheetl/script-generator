@@ -1,6 +1,5 @@
 import config as cfg
 
-from azure.search.documents import SearchClient, SearchIndexingBufferedSender  
 from azure.search.documents.indexes import SearchIndexClient  
 from azure.core.credentials import AzureKeyCredential  
 from azure.search.documents.indexes.models import (

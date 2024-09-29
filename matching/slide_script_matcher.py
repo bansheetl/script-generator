@@ -1,9 +1,4 @@
-import sys
-import json
-import os
 import config as cfg
-import embeddings
-from openai import AzureOpenAI
 from azure.core.credentials import AzureKeyCredential  
 from azure.search.documents import SearchClient  
 from tqdm import tqdm
@@ -14,19 +9,18 @@ from azure.search.documents.models import (
 credential = AzureKeyCredential(cfg.search_api_key)
 search_client = SearchClient(cfg.search_api_endpoint, cfg.index_name, credential)  
 
-def match_slides_with_script(slides_json):
+def match_slides_with_script(repository):
+    if repository.read_slide_matches():
+        print("Slides already matched with script")
+        return
     
-    with open(slides_json, 'r', encoding='utf-8') as file:
-        data = json.load(file)
-    # Extract the documents from the JSON content
-    slides = data
-
+    slides = repository.read_slide_descriptions()
     results = []
     # Initialize the progress bar
     print(f"Matching {len(slides)} slides with script")
     progress_bar = tqdm(total=len(slides), desc="Matching slides with script")
     for slide in slides:
-        vector_query = VectorizedQuery(vector=embeddings.generate_embeddings(slide["description"]), k_nearest_neighbors=3, fields="content_vector")
+        vector_query = VectorizedQuery(vector=slide["embeddings"], k_nearest_neighbors=3, fields="content_vector")
     
         # Pure Vector Search
         slide_results = search_client.search(  
@@ -54,16 +48,4 @@ def match_slides_with_script(slides_json):
     # Close the progress bar
     progress_bar.close()
     
-    target_file = os.join(os.path.dirname(json_file_path),'slide_matcher.json')
-    print(f"Writing slide match to file slide_match.json")
-    with open(target_file, 'w', encoding='utf-8') as outfile:
-        json.dump(results, outfile, ensure_ascii=False, indent=4)
-    
-    
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python script_storage.py <path_to_json_file>")
-        sys.exit(1)
-
-    json_file_path = sys.argv[1]
-    match_slides_with_script(json_file_path)
+    repository.save_slide_matches(results)

@@ -3,7 +3,7 @@ import re
 
 
 def extract_paragraphs_from_docx(file_path):
-    # Load the document
+    print(f"Extracting paragraphs from {file_path}")
     doc = Document(file_path)
     paragraphs = []
     timestamp_pattern = re.compile(r'\d+:\d+(:\d+)?')
@@ -16,6 +16,7 @@ def extract_paragraphs_from_docx(file_path):
     return paragraphs
 
 def concatenate_paragraphs(paragraphs, max_length):
+    print(f"Creating chunks from paragraphs with  {max_length} max length")
     chunks = []
     current_chunk = ""
     
@@ -36,18 +37,8 @@ def concatenate_paragraphs(paragraphs, max_length):
     
     return chunks
 
-def main(file_path, max_context_length=8000):
+def extract_chunks_from_docx(file_path, max_context_length=8000):
     paragraphs = extract_paragraphs_from_docx(file_path)
     chunks = concatenate_paragraphs(paragraphs, max_context_length)
     
     return chunks
-
-# Example usage
-if __name__ == "__main__":
-    file_path = "backend.docx"  # Replace with your .docx file path
-    chunks = main(file_path, -1)
-    print(len(chunks))
-    # output chunks[0] in a file
-    with open("output.txt", "w") as f:
-        f.write(chunks[0])
-    

@@ -11,6 +11,8 @@ azure_openai_api_key = config.get('AzureOpenAI', 'azure_openai_api_key')
 azure_openai_endpoint = config.get('AzureOpenAI', 'azure_openai_endpoint')
 
 # OpenAI
+openai_organization = config.get('OpenAI', 'organization')
+openai_project = config.get('OpenAI', 'project')
 openai_api_key = config.get('OpenAI', 'openai_api_key')
 
 # AzureSearch

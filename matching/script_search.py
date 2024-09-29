@@ -1,29 +1,32 @@
 
 import config as cfg
-import json
-import sys
 
 from azure.core.credentials import AzureKeyCredential  
 from azure.search.documents import (
-    SearchClient,
-    IndexDocumentsBatch
+    SearchClient
 )
 from azure.core.exceptions import HttpResponseError
+import time
 
 credential = AzureKeyCredential(cfg.search_api_key)
 
-def read_script(json_file_path):
-    with open(json_file_path, 'r', encoding='utf-8') as file:
-        data = json.load(file)
+def is_script_search_initialized(repository):
+    # Check if the index exists
+    search_client = SearchClient(cfg.search_api_endpoint, cfg.index_name, credential)  
+    try:
+        search_client.get_document(key=f"{repository.get_script_id()}_1")
+        return True
+    except HttpResponseError as e:
+        return False
 
-    # Extract the documents from the JSON content
-    print(f"Read script from {json_file_path}")
-    return data
-
-def handle_error(error):
-    raise ValueError(e)
-
-def store_script(script):
+def init_script_search(repository):
+    
+    if is_script_search_initialized(repository):
+        print("Script search already initialized")
+        return
+    
+    script = repository.read_json_script()
+    print(f"Initializing script search for script {script['id']}")
     # Create a SearchIndexingBufferedSender
     search_client = SearchClient(cfg.search_api_endpoint, cfg.index_name, credential)  
     
@@ -48,11 +51,15 @@ def store_script(script):
 
     print(f"Uploaded {len(documents)} documents in total")
     
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python script_storage.py <path_to_json_file>")
-        sys.exit(1)
+    max_wait_time = 10 * 60  # 10 minutes
+    wait_interval = 30  # 30 seconds
+    waited_time = 0
 
-    json_file_path = sys.argv[1]
-    script = read_script(json_file_path)
-    store_script(script)
+    while waited_time < max_wait_time:
+        if is_script_search_initialized(repository):
+            print("Script search successfully initialized")
+            break
+        time.sleep(wait_interval)
+        waited_time += wait_interval
+    else:
+        print("Failed to initialize script search within the maximum wait time")

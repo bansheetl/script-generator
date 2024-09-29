@@ -1,10 +1,10 @@
-import os
 import config as cfg
 from openai import OpenAI
 import sys
 import tqdm
 import base64
-import json
+import embeddings
+import interpreting.slide_extractor as extractor
 
 # Load your API key from an environment variable
 
@@ -14,14 +14,23 @@ client = OpenAI(
     api_key = cfg.openai_api_key
 )
 
-def interpret_slides(dir):
-    slide_files = [os.path.join(dir, f) for f in os.listdir(dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-
-    if not slide_files:
-        print(f"No slide images found in directory {file}.")
-        sys.exit(1)
+def interpret_slides(repository):
+    if repository.read_slide_descriptions():
+        print("Slides already interpreted")
+        return
+    
+    slides_file = repository.get_slides_file()
+    slide_files = repository.load_slides()
+    if len(slide_files) == 0:
+        slides = extractor.extract_slides(slides_file)
+        slide_files = repository.save_slides(slides)
         
-
+    if not slide_files:
+        print(f"No slide images were extracted from {slides_file}.")
+        sys.exit(1)
+    
+    print(f"Interpreting {len(slide_files)} slides...")
+    
     messages=[
         {"role": "system", 
         "content": 
@@ -32,7 +41,6 @@ def interpret_slides(dir):
     ]
 
     descriptions = []
-    print(f"Processing {len(slide_files)} slide images...")
     progress_bar = tqdm.tqdm(total=len(slide_files), unit="chunk")
     for slide_file in slide_files:
         current_message = messages.copy()
@@ -54,22 +62,11 @@ def interpret_slides(dir):
         response_text = response.choices[0].message.content
         descriptions.append({
             "slide_file": slide_file,
-            "description": response_text
+            "description": response_text,
+            "embeddings": embeddings.generate_embeddings(response_text)
         })
         progress_bar.update(1)
 
     progress_bar.close()
-
-    # output to file instead   
-    print(f"Writing slide description to file {dir + '/slide_descriptions.json'}")
-    with open(file + '/slide_descriptions.json', "w", encoding="utf-8") as f:
-        json.dump(descriptions, f, indent=4, ensure_ascii=False)
     
-    
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python slide_interpreter.py <path_to_slide_image_directory>")
-        sys.exit(1)
-
-    file = sys.argv[1]
-    interpret_slides(file)
+    repository.save_slide_descriptions(descriptions)
