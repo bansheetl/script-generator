@@ -1,0 +1,10 @@
+Script: <input type="file" (change)="onScriptSelected($event)" />
+Slide matches: <input type="file" (change)="onSlideMatchesSelected($event)" />
+<div *ngFor="let paragraph of paragraphs" class="script-paragraph">
+    <div class="slides-container">
+        <div *ngFor="let slideCandidate of paragraph.slideCandidates">
+            <img [src]="slideCandidate" class="slide" />
+        </div>
+    </div>
+    <div>{{ paragraph.text }}</div>
+</div>

@@ -1,0 +1,18 @@
+.script-paragraph {
+    margin-top: 1em;
+    padding: 0.5em;
+    font-size: 1em;
+    font-family: 'Roboto', sans-serif;
+    border: 1px solid #858383;
+    border-radius: 5px;
+}
+
+.slides-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.slide {
+    width: 400px;
+}
