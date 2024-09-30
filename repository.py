@@ -34,14 +34,14 @@ class Repository:
         return self._slides_file
         
     def get_script_id(self):
-        script_id = self.__get_file_basename()[:2]
+        file_name, file_extension = os.path.splitext(os.path.basename(self.get_transcript_file()))
+        script_id = file_name[:2]
         if not script_id.isdigit():
             raise ValueError("The first two characters of the transcript file name must be digits.")
         return script_id
     
     def get_script_file(self):
-        file_name = self.__get_file_basename()
-        return os.path.join(self.folder_name, file_name + ".adoc")
+        return os.path.join(self.folder_name, "script.adoc")
     
     def save_lectored_output(self, lectored_output):
         lectored_output_file = self.__get_lectored_output_file()
@@ -120,8 +120,7 @@ class Repository:
         return slides_folder
             
     def __get_json_script_file(self):
-        file_name = self.__get_file_basename()
-        return os.path.join(self.folder_name, f"{file_name}.json")
+        return os.path.join(self.folder_name, "script.json")
 
     def __get_slide_descriptions_file(self):
         return os.path.join(self.folder_name, 'slide_descriptions.json')
@@ -130,12 +129,7 @@ class Repository:
         return os.path.join(self.folder_name, 'slide_matches.json')
             
     def __get_lectored_output_file(self):
-        file_name = self.__get_file_basename()
-        return os.path.join(self.folder_name, f"{file_name}_lectored.txt")
-    
-    def __get_file_basename(self):        
-        file_name, file_extension = os.path.splitext(os.path.basename(self.get_transcript_file()))
-        return file_name
+        return os.path.join(self.folder_name, "script.txt")
     
     def __str__(self):
         return f"Output folder: {self.folder_name}"

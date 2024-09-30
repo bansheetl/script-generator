@@ -1,9 +1,15 @@
-Script: <input type="file" (change)="onScriptSelected($event)" />
-Slide matches: <input type="file" (change)="onSlideMatchesSelected($event)" />
+<div class="scripts-container">
+    <div *ngFor="let script of scripts">
+        <input type="button" [value]="script" (click)="onScriptSelected(script)">
+    </div>
+</div>
 <div *ngFor="let paragraph of paragraphs" class="script-paragraph">
     <div class="slides-container">
-        <div *ngFor="let slideCandidate of paragraph.slideCandidates">
-            <img [src]="slideCandidate" class="slide" />
+        <div *ngFor="let slideCandidate of paragraph.slideCandidates" class="slide-wrapper">
+            <img [src]="slideCandidate.slide_file" class="slide" />
+            <div class="overlay">
+                <div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
+            </div>
         </div>
     </div>
     <div>{{ paragraph.text }}</div>
