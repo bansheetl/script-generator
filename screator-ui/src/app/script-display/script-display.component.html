@@ -1,28 +1,60 @@
 <div class="scripts-container">
-    <div *ngFor="let script of scripts">
-        <input type="button" [value]="script" (click)="onScriptSelected(script)">
-    </div>
-    <input type="button" value="Save script" *ngIf="selectedScript" (click)="saveScript()" />
+    <mat-toolbar>
+        <span>Screator</span>
+        <span class="tb-spacer"></span>
+        <mat-form-field class="script-select">
+            <mat-label>Selected script</mat-label>
+            <mat-select [(value)]="selectedScript" (selectionChange)="onScriptSelected()">
+                <mat-option [value]="script" *ngFor="let script of scripts">
+                    {{ script }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+        <button mat-icon-button class="material-icons" [disabled]="!scriptEdited" (click)="onScriptSelected()">
+            <mat-icon>refresh</mat-icon>
+        </button>
+        <button mat-raised-button [disabled]="!scriptEdited" (click)="saveScript()" class="tb-button">
+            Save script
+        </button>
+
+    </mat-toolbar>
 </div>
-<div *ngFor="let paragraph of paragraphs" class="script-paragraph">
-    <span class="material-icons paste-button" (click)="moveSlideToParagraph(paragraph)"
-        *ngIf="slideToMove">content_paste_go</span>
-    <div class="slides-container">
-        <div *ngFor="let slideCandidate of paragraph.slideCandidates" class="slide-wrapper">
-            <img [src]="slideCandidate.slide_file" class="slide" />
-            <div class="overlay">
-                <div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
+<div class="paragraph-container">
+    <mat-radio-group [(ngModel)]="slideToMove">
+        <mat-card appearance="outlined" class="script-paragraph" *ngFor="let paragraph of paragraphs">
+            <button mat-icon-button class="material-icons paste-button" (click)="moveSlideToParagraph(paragraph)"
+                [disabled]="!slideToMove">
+                <mat-icon>content_paste_go</mat-icon>
+            </button>
+            <div class="content-wrapper">
+                <div class="slides-container">
+                    <div *ngFor="let slideCandidate of paragraph.slideCandidates" class="slides-wrapper">
+                        <div class="slide-wrapper">
+                            <img [src]="slideCandidate.slide_file" class="slide" />
+                            <div class="overlay">
+                                <div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
+                            </div>
+
+                            <button mat-icon-button class="material-icons checkmark-button"
+                                *ngIf="!slideCandidate.selected"
+                                (click)="selectSlideCandidate(paragraph, slideCandidate)">
+                                <mat-icon>check</mat-icon>
+                            </button>
+
+                            <button mat-icon-button class="material-icons delete-button"
+                                *ngIf="!slideCandidate.selected"
+                                (click)="deleteSlideCandidate(paragraph, slideCandidate)"><mat-icon>delete</mat-icon></button>
+
+                            <mat-radio-button class="slide-move-selector" [name]="'move_' + slideCandidate.slide_file"
+                                [value]="slideCandidate" *ngIf="!slideCandidate.selected">
+                            </mat-radio-button>
+                        </div>
+                    </div>
+                </div>
+                <div class="paragraph-text">
+                    {{ paragraph.text }}
+                </div>
             </div>
-
-            <span class="material-icons checkmark-button" *ngIf="!slideCandidate.selected"
-                (click)="selectSlideCandidate(paragraph, slideCandidate)">check</span>
-
-            <span class="material-icons delete-button" *ngIf="!slideCandidate.selected"
-                (click)="deleteSlideCandidate(paragraph, slideCandidate)">delete</span>
-
-            <input type="radio" class="slide-move-selector" [name]="'move_' + slideCandidate.slide_file"
-                [(ngModel)]="slideToMove" [value]="slideCandidate" *ngIf="!slideCandidate.selected" />
-        </div>
-    </div>
-    <div>{{ paragraph.text }}</div>
+        </mat-card>
+    </mat-radio-group>
 </div>
