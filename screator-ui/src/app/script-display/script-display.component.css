@@ -44,3 +44,30 @@
     background-color: green;
     /* Adjust color as needed */
 }
+
+.paste-button {
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.checkmark-button {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.delete-button {
+    position: absolute;
+    top: 0;
+    left: 30px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.slide-move-selector {
+    position: absolute;
+    top: 0;
+    right: 0;
+}

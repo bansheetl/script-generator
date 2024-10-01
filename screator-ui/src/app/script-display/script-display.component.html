@@ -2,14 +2,26 @@
     <div *ngFor="let script of scripts">
         <input type="button" [value]="script" (click)="onScriptSelected(script)">
     </div>
+    <input type="button" value="Save script" *ngIf="selectedScript" (click)="saveScript()" />
 </div>
 <div *ngFor="let paragraph of paragraphs" class="script-paragraph">
+    <span class="material-icons paste-button" (click)="moveSlideToParagraph(paragraph)"
+        *ngIf="slideToMove">content_paste_go</span>
     <div class="slides-container">
         <div *ngFor="let slideCandidate of paragraph.slideCandidates" class="slide-wrapper">
             <img [src]="slideCandidate.slide_file" class="slide" />
             <div class="overlay">
                 <div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
             </div>
+
+            <span class="material-icons checkmark-button" *ngIf="!slideCandidate.selected"
+                (click)="selectSlideCandidate(paragraph, slideCandidate)">check</span>
+
+            <span class="material-icons delete-button" *ngIf="!slideCandidate.selected"
+                (click)="deleteSlideCandidate(paragraph, slideCandidate)">delete</span>
+
+            <input type="radio" class="slide-move-selector" [name]="'move_' + slideCandidate.slide_file"
+                [(ngModel)]="slideToMove" [value]="slideCandidate" *ngIf="!slideCandidate.selected" />
         </div>
     </div>
     <div>{{ paragraph.text }}</div>
