@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ScriptDisplayComponent } from './script-display/script-display.component';
+import { ScriptEditorComponent } from './script-editor/script-editor.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, ScriptDisplayComponent],
+  imports: [RouterOutlet, ScriptEditorComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })

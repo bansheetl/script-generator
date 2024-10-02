@@ -13,10 +13,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 declare var fs: any;
 
 @Component({
-  selector: 'app-script-display',
+  selector: 'app-script-editor',
   standalone: true,
-  templateUrl: './script-display.component.html',
-  styleUrls: ['./script-display.component.css'],
+  templateUrl: './script-editor.component.html',
+  styleUrls: ['./script-editor.component.css'],
   imports: [
     CommonModule,
     FormsModule,
@@ -30,7 +30,7 @@ declare var fs: any;
     MatFormFieldModule
   ]
 })
-export class ScriptDisplayComponent implements OnInit {
+export class ScriptEditorComponent implements OnInit {
 
   static readonly SLIDE_PREFIX = '../../../../../';
   static readonly SCRIPT_ROOT_DIR = '../output';
@@ -44,9 +44,9 @@ export class ScriptDisplayComponent implements OnInit {
   constructor(private changeDetectorRef: ChangeDetectorRef) { }
 
   ngOnInit(): void {
-    const script_dirs = fs.readdirSync(ScriptDisplayComponent.SCRIPT_ROOT_DIR);
+    const script_dirs = fs.readdirSync(ScriptEditorComponent.SCRIPT_ROOT_DIR);
     script_dirs.forEach((script_dir: string) => {
-      if (script_dir !== '.DS_Store' && this.hasRequiredFiles(ScriptDisplayComponent.SCRIPT_ROOT_DIR + '/' + script_dir)) {
+      if (script_dir !== '.DS_Store' && this.hasRequiredFiles(ScriptEditorComponent.SCRIPT_ROOT_DIR + '/' + script_dir)) {
         this.scripts.push(script_dir);
       }
     });
@@ -63,7 +63,7 @@ export class ScriptDisplayComponent implements OnInit {
     const script = {
       content: this.paragraphs
     };
-    fs.writeFile(ScriptDisplayComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript + '/script_edited.json', JSON.stringify(script), (err: any) => {
+    fs.writeFile(ScriptEditorComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript + '/script_edited.json', JSON.stringify(script), (err: any) => {
       if (err) {
         console.error('Error saving script:', err);
       }
@@ -116,13 +116,13 @@ export class ScriptDisplayComponent implements OnInit {
 
   onScriptSelected(): void {
     this.scriptEdited = false;
-    fs.readFile(ScriptDisplayComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript + '/script.json', 'utf8', (err: any, data: any) => {
+    fs.readFile(ScriptEditorComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript + '/script.json', 'utf8', (err: any, data: any) => {
       if (err) {
         console.error('Error reading script:', err);
         return;
       }
       this.updateParagraphs(data);
-      fs.readFile(ScriptDisplayComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript + '/slide_matches.json', 'utf8', (err: any, data: any) => {
+      fs.readFile(ScriptEditorComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript + '/slide_matches.json', 'utf8', (err: any, data: any) => {
         if (err) {
           console.error('Error reading slide matches:', err);
           return;
@@ -156,7 +156,7 @@ export class ScriptDisplayComponent implements OnInit {
             paragraph.slideCandidates = [];
           }
           paragraph.slideCandidates.push({
-            slide_file: ScriptDisplayComponent.SLIDE_PREFIX + slideMatch.slide_file,
+            slide_file: ScriptEditorComponent.SLIDE_PREFIX + slideMatch.slide_file,
             score: match.score,
             selected: false
           });
