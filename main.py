@@ -3,7 +3,7 @@ import lectoring.script_lector as lector
 import interpreting.slide_interpreter as interpreter
 import matching.slide_script_matcher as matcher
 import matching.script_search as script_search
-import script_generator as generator
+import script_generator_auto as generator
 from repository import Repository
 
 

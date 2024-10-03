@@ -17,6 +17,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatFormFieldModule } from '@angular/material/form-field';
 
 declare var fs: any;
+declare var path: any;
 
 @Component({
   selector: 'app-script-editor',
@@ -48,6 +49,8 @@ export class AppComponent implements OnInit {
   scripts: string[] = [];
   slideToMove: SlideCandidate | null = null;
   selectedScript: string | null = null;
+  selectedSlide: Slide | null = null;
+  allSlides: Slide[] = [];
 
   constructor(private store: Store<AppState>) {
     this.paragraphs$ = this.store.select(selectParagraphs);
@@ -96,6 +99,13 @@ export class AppComponent implements OnInit {
       });
     });
     this.store.dispatch(scriptSaved());
+  }
+
+  insertSelectedSlide(paragraph: Paragraph) {
+    if (this.selectedSlide && this.selectedSlide.slideCandidate) {
+      const slideCandidate = this.selectedSlide.slideCandidate
+      this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate }));
+    }
   }
 
   selectSlideCandidate(paragraph: Paragraph, selectedSlide: SlideCandidate) {
@@ -150,17 +160,32 @@ export class AppComponent implements OnInit {
   private addSlidesToParagraphs(result: string | ArrayBuffer | null, paragraphs: Paragraph[]) {
     const jsonContent = JSON.parse(result as string);
     console.log("Slides loaded", jsonContent)
+    this.allSlides = [];
     jsonContent.forEach((slideMatch: SlideMatch) => {
+      const slide: Slide = {
+        slide_name: path.basename(slideMatch.slide_file),
+        slide_file: AppComponent.SLIDE_PREFIX + slideMatch.slide_file
+      }
+      this.allSlides.push(slide);
       slideMatch.results.forEach((match: SlideMatchResult) => {
         const paragraph = paragraphs[parseInt(match.paragraph_id) - 1];
         if (paragraph) {
-          paragraph.slideCandidates.push({
+          const slideCandidate = {
             slide_file: AppComponent.SLIDE_PREFIX + slideMatch.slide_file,
             score: match.score,
             selected: false
-          });
+          };
+          slide.slideCandidate = slideCandidate;
+          paragraph.slideCandidates.push(slideCandidate);
         }
       });
     });
   }
+
+}
+
+interface Slide {
+  slide_name: string;
+  slide_file: string;
+  slideCandidate?: SlideCandidate;
 }

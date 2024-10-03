@@ -3,6 +3,17 @@
         <mat-toolbar>
             <span>Screator</span>
             <span class="tb-spacer"></span>
+            <mat-form-field class="image-select">
+                <mat-label>Slide chooser</mat-label>
+                <mat-select [(value)]="selectedSlide">
+                    <mat-select-trigger>
+                        {{ selectedSlide?.slide_name || ' ' }}
+                    </mat-select-trigger>
+                    <mat-option [value]="slide" *ngFor="let slide of allSlides">
+                        <img [src]="slide.slide_file" class="slide-select-option">
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
             <mat-form-field class="script-select">
                 <mat-label>Selected script</mat-label>
                 <mat-select [(value)]="selectedScript" (selectionChange)="onScriptSelected()">
@@ -36,6 +47,10 @@
                         <button mat-icon-button class="material-icons paste-button"
                             (click)="moveSlideToParagraph(paragraph)" [disabled]="!slideToMove">
                             <mat-icon>content_paste_go</mat-icon>
+                        </button>
+                        <button mat-icon-button class="material-icons insert-button" [disabled]="!selectedSlide"
+                            (click)="insertSelectedSlide(paragraph)">
+                            <mat-icon>download</mat-icon>
                         </button>
                         <div class="content-wrapper">
                             <div class="slides-container">
