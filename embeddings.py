@@ -3,7 +3,7 @@ from openai import AzureOpenAI
 
 client = AzureOpenAI(
         api_key=cfg.azure_openai_api_key,
-        api_version="2024-02-01",
+        api_version=cfg.azure_openai_version,
         azure_endpoint=cfg.azure_openai_endpoint,
     )
 

@@ -1,10 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Paragraph, SlideCandidate, SlideMatch, SlideMatchResult } from './app.model';
 import { AppState } from './app.reducers';
 import { Store } from '@ngrx/store';
-import { deleteSlideForParagraph, moveSlideToParagraph, scriptLoaded, scriptSaved, selectSlideForParagraph } from './app.actions';
+import { deleteSlideForParagraph, moveSlideToParagraph, redo, scriptLoaded, scriptSaved, selectSlideForParagraph, undo } from './app.actions';
 import { Observable } from 'rxjs';
-import { selectParagraphs, selectScriptEdited } from './app.selectors';
+import { selectParagraphs, selectRedoHistoryExists, selectScriptEdited, selectUndoHistoryExists } from './app.selectors';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,7 +15,6 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { appReducer } from './app.reducers';
 
 declare var fs: any;
 
@@ -44,13 +43,17 @@ export class AppComponent implements OnInit {
 
   paragraphs$: Observable<Paragraph[]>;
   scriptEdited$: Observable<boolean>;
+  undoHistoryExists$: Observable<boolean>;
+  redoHistoryExists$: Observable<boolean>;
   scripts: string[] = [];
   slideToMove: SlideCandidate | null = null;
   selectedScript: string | null = null;
 
-  constructor(private store: Store<AppState>, private changeDetectorRef: ChangeDetectorRef) {
+  constructor(private store: Store<AppState>) {
     this.paragraphs$ = this.store.select(selectParagraphs);
     this.scriptEdited$ = this.store.select(selectScriptEdited);
+    this.undoHistoryExists$ = this.store.select(selectUndoHistoryExists);
+    this.redoHistoryExists$ = this.store.select(selectRedoHistoryExists);
   }
 
   ngOnInit(): void {
@@ -69,6 +72,18 @@ export class AppComponent implements OnInit {
     return fs.existsSync(dir + '/script.json') && fs.existsSync(dir + '/slide_matches.json');
   }
 
+  getParagraphClass(paragraph: Paragraph): string {
+    return paragraph.slideCandidates.length == 0 || paragraph.slideCandidates.some(sc => sc.selected) ? 'script-paragraph selected-paragraph' : 'script-paragraph open-paragraph';
+  }
+
+  undo() {
+    this.store.dispatch(undo());
+  }
+
+  redo() {
+    this.store.dispatch(redo());
+  }
+
   saveScript() {
     this.paragraphs$.subscribe((paragraphs) => {
       const script = {
@@ -85,19 +100,16 @@ export class AppComponent implements OnInit {
 
   selectSlideCandidate(paragraph: Paragraph, selectedSlide: SlideCandidate) {
     this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate: selectedSlide }));
-    //this.changeDetectorRef.detectChanges();
   }
 
   deleteSlideCandidate(paragraph: Paragraph, slideToDelete: SlideCandidate) {
     this.store.dispatch(deleteSlideForParagraph({ paragraph, slideCandidate: slideToDelete }));
-    //this.changeDetectorRef.detectChanges();
   }
 
   moveSlideToParagraph(paragraph: Paragraph) {
     if (this.slideToMove) {
       this.store.dispatch(moveSlideToParagraph({ slideCandidate: this.slideToMove, paragraph }));
       this.slideToMove = null;
-      //this.changeDetectorRef.detectChanges();
     }
   }
 
@@ -117,7 +129,6 @@ export class AppComponent implements OnInit {
         this.store.dispatch(scriptLoaded({ paragraphs }));
       });
     });
-    //this.changeDetectorRef.detectChanges();
   }
 
   private retrieveParagraphs(result: string): Paragraph[] {

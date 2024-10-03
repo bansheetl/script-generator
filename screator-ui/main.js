@@ -1,6 +1,12 @@
-const { app, BrowserWindow } = require('electron');
+const { app, screen, session, BrowserWindow } = require('electron');
 const path = require('path');
+const os = require('os');
 const remote = require('@electron/remote/main')
+const reactDevToolsPath = path.join(
+    os.homedir(),
+    '/Library/Application Support/Google/Chrome/Default/Extensions/lmhkpmbekcpmknklioeibfkpmmfibljd/3.2.7_0'
+)
+
 remote.initialize()
 
 require('electron-reload')(__dirname, {
@@ -9,26 +15,27 @@ require('electron-reload')(__dirname, {
     hardResetMethod: 'exit'
 });
 
-function createWindow() {
+async function createWindow() {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width, height } = primaryDisplay.workAreaSize;
+
     const win = new BrowserWindow({
-        width: 1600,
-        height: 1200,
+        width: width,
+        height: height,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
         },
     });
+    await session.defaultSession.loadExtension(reactDevToolsPath);
     win.loadFile(path.join(__dirname, 'dist/screator-ui/browser/index.html'));
-    win.webContents.openDevTools();
     remote.enable(win.webContents);
 }
 
 app.on('ready', createWindow);
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+    app.quit();
 });
 
 app.on('activate', () => {

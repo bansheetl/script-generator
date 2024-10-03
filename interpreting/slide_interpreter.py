@@ -9,8 +9,8 @@ import interpreting.slide_extractor as extractor
 # Load your API key from an environment variable
 
 client = OpenAI(
-    organization='org-l3Zg6erY9OaGazrnHq122oLu',
-    project='proj_fGvFTvQ1VchG4083AYQNogNG',
+    organization=cfg.openai_organization,
+    project=cfg.openai_project,
     api_key = cfg.openai_api_key
 )
 

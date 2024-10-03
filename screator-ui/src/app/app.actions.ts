@@ -6,3 +6,5 @@ export const deleteSlideForParagraph = createAction('[Paragraph] Delete Slide', 
 export const moveSlideToParagraph = createAction('[Paragraph] Move Slide', props<{ slideCandidate: SlideCandidate, paragraph: Paragraph }>());
 export const scriptLoaded = createAction('[Script] Loaded', props<{ paragraphs: Paragraph[] }>());
 export const scriptSaved = createAction('[Script] Saved');
+export const undo = createAction('[Commands] Undo');
+export const redo = createAction('[Commands] Redo');

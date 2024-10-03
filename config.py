@@ -8,6 +8,7 @@ config.read('config.properties')
 
 # AzureOpenAI
 azure_openai_api_key = config.get('AzureOpenAI', 'azure_openai_api_key')
+azure_openai_version = config.get('AzureOpenAI', 'azure_openai_version')
 azure_openai_endpoint = config.get('AzureOpenAI', 'azure_openai_endpoint')
 
 # OpenAI

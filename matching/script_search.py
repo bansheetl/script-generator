@@ -7,23 +7,34 @@ from azure.search.documents import (
 )
 from azure.core.exceptions import HttpResponseError
 import time
+import matching.init_azure_search as index_mgmt
 
 credential = AzureKeyCredential(cfg.search_api_key)
+search_client = SearchClient(cfg.search_api_endpoint, cfg.index_name, credential)  
 
 def is_script_search_initialized(repository):
     # Check if the index exists
-    search_client = SearchClient(cfg.search_api_endpoint, cfg.index_name, credential)  
     try:
         search_client.get_document(key=f"{repository.get_script_id()}_1")
         return True
     except HttpResponseError as e:
         return False
 
+def is_script_search_empty(repository):
+    try:
+        return search_client.get_document_count() == 0
+    except HttpResponseError as e:
+        return False
+    
+    
 def init_script_search(repository):
     
     if is_script_search_initialized(repository):
         print("Script search already initialized")
         return
+
+    if not is_script_search_empty(repository):
+        index_mgmt.reinitialize()
     
     script = repository.read_json_script()
     print(f"Initializing script search for script {script['id']}")

@@ -1,64 +1,73 @@
 <div class="scripts-container">
-    <mat-toolbar>
-        <span>Screator</span>
-        <span class="tb-spacer"></span>
-        <mat-form-field class="script-select">
-            <mat-label>Selected script</mat-label>
-            <mat-select [(value)]="selectedScript" (selectionChange)="onScriptSelected()">
-                <mat-option [value]="script" *ngFor="let script of scripts">
-                    {{ script }}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>
-        <button mat-icon-button class="material-icons" [disabled]="!(scriptEdited$ | async)"
-            (click)="onScriptSelected()">
-            <mat-icon>refresh</mat-icon>
-        </button>
-        <button mat-raised-button [disabled]="!(scriptEdited$ | async)" (click)="saveScript()" class="tb-button">
-            Save script
-        </button>
+    <div class="toolbar-wrapper">
+        <mat-toolbar>
+            <span>Screator</span>
+            <span class="tb-spacer"></span>
+            <mat-form-field class="script-select">
+                <mat-label>Selected script</mat-label>
+                <mat-select [(value)]="selectedScript" (selectionChange)="onScriptSelected()">
+                    <mat-option [value]="script" *ngFor="let script of scripts">
+                        {{ script }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+            <button mat-icon-button class="material-icons" [disabled]="!(undoHistoryExists$ | async)" (click)="undo()">
+                <mat-icon>undo</mat-icon>
+            </button>
+            <button mat-icon-button class="material-icons" [disabled]="!(redoHistoryExists$ | async)" (click)="redo()">
+                <mat-icon>redo</mat-icon>
+            </button>
+            <button mat-icon-button class="material-icons" [disabled]="!(scriptEdited$ | async)"
+                (click)="onScriptSelected()">
+                <mat-icon>refresh</mat-icon>
+            </button>
+            <button mat-raised-button [disabled]="!(scriptEdited$ | async)" (click)="saveScript()" class="tb-button">
+                Save script
+            </button>
 
-    </mat-toolbar>
-</div>
-<div *ngIf="paragraphs$ | async as paragraphs">
-    <div class="paragraph-container">
-        <mat-radio-group [(ngModel)]="slideToMove">
-            <mat-card appearance="outlined" class="script-paragraph" *ngFor="let paragraph of paragraphs">
-                <button mat-icon-button class="material-icons paste-button" (click)="moveSlideToParagraph(paragraph)"
-                    [disabled]="!slideToMove">
-                    <mat-icon>content_paste_go</mat-icon>
-                </button>
-                <div class="content-wrapper">
-                    <div class="slides-container">
-                        <div *ngFor="let slideCandidate of paragraph.slideCandidates" class="slides-wrapper">
-                            <div class="slide-wrapper">
-                                <img [src]="slideCandidate.slide_file" class="slide" />
-                                <div class="overlay">
-                                    <div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
+        </mat-toolbar>
+    </div>
+    <div class="content-wrapper">
+        <div *ngIf="paragraphs$ | async as paragraphs">
+            <div class="paragraph-container">
+                <mat-radio-group [(ngModel)]="slideToMove">
+                    <mat-card appearance="outlined" *ngFor="let paragraph of paragraphs"
+                        [ngClass]="getParagraphClass(paragraph)">
+                        <button mat-icon-button class="material-icons paste-button"
+                            (click)="moveSlideToParagraph(paragraph)" [disabled]="!slideToMove">
+                            <mat-icon>content_paste_go</mat-icon>
+                        </button>
+                        <div class="content-wrapper">
+                            <div class="slides-container">
+                                <div *ngFor="let slideCandidate of paragraph.slideCandidates" class="slides-wrapper">
+                                    <div class="slide-wrapper">
+                                        <img [src]="slideCandidate.slide_file" class="slide" />
+                                        <div class="overlay">
+                                            <div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
+                                        </div>
+
+                                        <button mat-icon-button class="material-icons checkmark-button"
+                                            *ngIf="!slideCandidate.selected"
+                                            (click)="selectSlideCandidate(paragraph, slideCandidate)">
+                                            <mat-icon>check</mat-icon>
+                                        </button>
+
+                                        <button mat-icon-button class="material-icons delete-button"
+                                            (click)="deleteSlideCandidate(paragraph, slideCandidate)"><mat-icon>delete</mat-icon></button>
+
+                                        <mat-radio-button class="slide-move-selector"
+                                            [name]="'move_' + slideCandidate.slide_file" [value]="slideCandidate">
+                                        </mat-radio-button>
+                                    </div>
                                 </div>
-
-                                <button mat-icon-button class="material-icons checkmark-button"
-                                    *ngIf="!slideCandidate.selected"
-                                    (click)="selectSlideCandidate(paragraph, slideCandidate)">
-                                    <mat-icon>check</mat-icon>
-                                </button>
-
-                                <button mat-icon-button class="material-icons delete-button"
-                                    *ngIf="!slideCandidate.selected"
-                                    (click)="deleteSlideCandidate(paragraph, slideCandidate)"><mat-icon>delete</mat-icon></button>
-
-                                <mat-radio-button class="slide-move-selector"
-                                    [name]="'move_' + slideCandidate.slide_file" [value]="slideCandidate"
-                                    *ngIf="!slideCandidate.selected">
-                                </mat-radio-button>
+                            </div>
+                            <div class="paragraph-text">
+                                {{ paragraph.text }}
                             </div>
                         </div>
-                    </div>
-                    <div class="paragraph-text">
-                        {{ paragraph.text }}
-                    </div>
-                </div>
-            </mat-card>
-        </mat-radio-group>
+                    </mat-card>
+                </mat-radio-group>
+            </div>
+        </div>
     </div>
 </div>
