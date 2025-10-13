@@ -1,5 +1,5 @@
 openai
-docx
+python-docx
 tqdm
 pdf2image
 azure-search-documents 

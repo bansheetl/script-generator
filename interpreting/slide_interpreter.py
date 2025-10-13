@@ -1,5 +1,5 @@
 import config as cfg
-from openai import OpenAI
+from openai import AzureOpenAI
 import sys
 import tqdm
 import base64
@@ -8,11 +8,12 @@ import interpreting.slide_extractor as extractor
 
 # Load your API key from an environment variable
 
-client = OpenAI(
-    organization=cfg.openai_organization,
-    project=cfg.openai_project,
-    api_key = cfg.openai_api_key
-)
+client = AzureOpenAI(
+        api_key=cfg.azure_openai_api_key,
+        api_version=cfg.azure_openai_version,
+        azure_endpoint=cfg.azure_openai_endpoint,
+    )
+
 
 def interpret_slides(repository):
     if repository.read_slide_descriptions():
@@ -35,7 +36,7 @@ def interpret_slides(repository):
         {"role": "system", 
         "content": 
             '''Du bist ein Professor für Software Architektur. Du sollst eine Slide von einer Vorlesung 
-            inhaltlich beschreiben. Die Slide wird als Bild übergeben. 
+            über Software Architektur inhaltlich beschreiben. Die Slide wird als Bild übergeben. 
             Gib als Ergebnis eine Beschreibung mit maximal 7 Sätzen zurück.
             '''}
     ]

@@ -35,6 +35,9 @@ This project is designed to process and generate scripts from various input sour
     - Create a `config.properties` file in the root directory with your Azure credentials.
     - See config.py for details on the expected properties
 
+5. **Install pre-requirements for pdf2image**
+    See https://github.com/Belval/pdf2image for information
+
 ### Running the Project
 
 1. **Start the Electron app:**

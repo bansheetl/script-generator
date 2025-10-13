@@ -2,10 +2,6 @@ const { app, screen, session, BrowserWindow } = require('electron');
 const path = require('path');
 const os = require('os');
 const remote = require('@electron/remote/main')
-const reactDevToolsPath = path.join(
-    os.homedir(),
-    '/Library/Application Support/Google/Chrome/Default/Extensions/lmhkpmbekcpmknklioeibfkpmmfibljd/3.2.7_0'
-)
 
 remote.initialize()
 
@@ -27,7 +23,6 @@ async function createWindow() {
             contextIsolation: false,
         },
     });
-    await session.defaultSession.loadExtension(reactDevToolsPath);
     win.loadFile(path.join(__dirname, 'dist/screator-ui/browser/index.html'));
     remote.enable(win.webContents);
 }

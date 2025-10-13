@@ -164,7 +164,12 @@ export class AppComponent implements OnInit {
     jsonContent.forEach((slideMatch: SlideMatch) => {
       const slide: Slide = {
         slide_name: path.basename(slideMatch.slide_file),
-        slide_file: AppComponent.SLIDE_PREFIX + slideMatch.slide_file
+        slide_file: AppComponent.SLIDE_PREFIX + slideMatch.slide_file,
+        slideCandidate: {
+          slide_file: AppComponent.SLIDE_PREFIX + slideMatch.slide_file,
+          score: 0,
+          selected: false
+        }
       }
       this.allSlides.push(slide);
       slideMatch.results.forEach((match: SlideMatchResult) => {

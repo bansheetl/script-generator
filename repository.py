@@ -3,16 +3,15 @@ import os
 from tqdm import tqdm
 
 class Repository:
-    
+
     def __init__(self, input_folder):
         if not os.path.isdir(input_folder):
             raise ValueError(f"The folder {input_folder} does not exist.")
-        
+
         input_folder_name = os.path.basename(input_folder)
         self.folder_name = os.path.join("output", input_folder_name)
         if not os.path.isdir(self.folder_name):
             os.makedirs(self.folder_name)
-        
 
         input_files = os.listdir(input_folder)
         docx_files = [file for file in input_files if file.endswith('.docx')]
