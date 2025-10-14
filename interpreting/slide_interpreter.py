@@ -5,6 +5,7 @@ import tqdm
 import base64
 import embeddings
 import interpreting.slide_extractor as extractor
+from prompt_loader import load_prompt
 
 # Load your API key from an environment variable
 
@@ -33,12 +34,7 @@ def interpret_slides(repository):
     print(f"Interpreting {len(slide_files)} slides...")
     
     messages=[
-        {"role": "system", 
-        "content": 
-            '''Du bist ein Professor für Software Architektur. Du sollst eine Slide von einer Vorlesung 
-            über Software Architektur inhaltlich beschreiben. Die Slide wird als Bild übergeben. 
-            Gib als Ergebnis eine Beschreibung mit maximal 7 Sätzen zurück.
-            '''}
+        {"role": "system", "content": load_prompt("slide_interpreter_system")}
     ]
 
     descriptions = []
