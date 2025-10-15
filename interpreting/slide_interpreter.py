@@ -1,19 +1,25 @@
-import config as cfg
-from openai import AzureOpenAI
 import sys
 import tqdm
 import base64
 import embeddings
 import interpreting.slide_extractor as extractor
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from llm import get_chat_model
 from prompt_loader import load_prompt
 
-# Load your API key from an environment variable
 
-client = AzureOpenAI(
-        api_key=cfg.azure_openai_api_key,
-        api_version=cfg.azure_openai_version,
-        azure_endpoint=cfg.azure_openai_endpoint,
-    )
+def _extract_text_from_message(message: AIMessage) -> str:
+    """Normalize LangChain message content into printable text."""
+    content = message.content
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, dict) and item.get("type") == "text":
+                parts.append(item.get("text", ""))
+        return "".join(parts)
+    return str(content)
 
 
 def interpret_slides(repository):
@@ -33,30 +39,29 @@ def interpret_slides(repository):
     
     print(f"Interpreting {len(slide_files)} slides...")
     
-    messages=[
-        {"role": "system", "content": load_prompt("slide_interpreter_system")}
-    ]
+    system_message = SystemMessage(content=load_prompt("slide_interpreter_system"))
+    client = get_chat_model()
 
     descriptions = []
     progress_bar = tqdm.tqdm(total=len(slide_files), unit="chunk")
     for slide_file in slide_files:
-        current_message = messages.copy()
         with open(slide_file, "rb") as f:
             encoded_content = base64.b64encode(f.read()).decode('utf-8')
-            current_message.append({
-                "role": "user", 
-                "content": [
+        current_messages = [
+            system_message,
+            HumanMessage(
+                content=[
                     {
-                        "type": "image_url", 
+                        "type": "image_url",
                         "image_url": {
                             "url": f"data:image/jpeg;base64,{encoded_content}"
-                        }
-                    }]})
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=current_message)
-        
-        response_text = response.choices[0].message.content
+                        },
+                    }
+                ]
+            ),
+        ]
+
+        response_text = _extract_text_from_message(client.invoke(current_messages))
         descriptions.append({
             "slide_file": slide_file,
             "description": response_text,

@@ -1,12 +1,6 @@
-import config as cfg
-from openai import AzureOpenAI
+from llm import get_embedding_model
 
-client = AzureOpenAI(
-        api_key=cfg.azure_openai_api_key,
-        api_version=cfg.azure_openai_version,
-        azure_endpoint=cfg.azure_openai_endpoint,
-    )
+_embedding_model = get_embedding_model()
 
 def generate_embeddings(text):
-    response = client.embeddings.create(model="text-embedding-ada-002", input=text)
-    return response.data[0].embedding
+    return _embedding_model.embed_query(text)
