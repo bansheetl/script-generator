@@ -20,22 +20,21 @@ declare var fs: any;
 declare var path: any;
 
 @Component({
-  selector: 'app-script-editor',
-  standalone: true,
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css'],
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatCardModule,
-    MatToolbarModule,
-    MatSelectModule,
-    MatGridListModule,
-    MatIconModule,
-    MatRadioModule,
-    MatFormFieldModule,
-  ]
+    selector: 'app-script-editor',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.css'],
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatButtonModule,
+        MatCardModule,
+        MatToolbarModule,
+        MatSelectModule,
+        MatGridListModule,
+        MatIconModule,
+        MatRadioModule,
+        MatFormFieldModule,
+    ]
 })
 export class AppComponent implements OnInit {
 
