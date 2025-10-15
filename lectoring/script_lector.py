@@ -1,8 +1,11 @@
+from typing import List
+
 import config as cfg
 import embeddings
 import lectoring.doc_extractor as de
 import tqdm
 from openai import AzureOpenAI
+from openai.types.chat import ChatCompletionMessageParam
 from prompt_loader import load_prompt
     
 def convert_to_json(script_id, content):
@@ -44,22 +47,40 @@ def lector_raw(repository):
         azure_endpoint=cfg.azure_openai_endpoint,
     )
 
-    messages = [
+    base_messages: List[ChatCompletionMessageParam] = [
         {"role": "system", "content": load_prompt("script_lector_system")}
     ]
     response_text = ""
+    lectored_paragraphs = []
     chunks = de.extract_chunks_from_docx(file, 1500)
     print(f"Lectoring {len(chunks)} chunks")
     progress_bar = tqdm.tqdm(total=len(chunks), unit="chunk")
-    for chunk in chunks:
-        # create copy of messages
-        current_message = messages.copy()
-        current_message.append({"role": "user", "content": chunk})
+    for idx, chunk in enumerate(chunks):
+        previous_context = "\n\n".join(lectored_paragraphs[-3:])
+        next_chunk = chunks[idx + 1] if idx + 1 < len(chunks) else ""
+
+        user_message = ( 
+            "Nutze die Referenzen nur, um Konsistenz sicherzustellen. "
+            "Gib ausschließlich die bearbeitete Fassung des Abschnitts CURRENT zurück.\n\n"
+            "REFERENCE_PREVIOUS:\n"
+            f"{previous_context or '<none>'}\n\n"
+            "CURRENT:\n"
+            f"{chunk}\n\n"
+            "REFERENCE_NEXT:\n"
+            f"{next_chunk or '<none>'}"
+        )
+
+        current_messages: List[ChatCompletionMessageParam] = list(base_messages)
+        current_messages.append({"role": "user", "content": user_message})
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=current_message)
-        # append to response_text
-        response_text += response.choices[0].message.content + "\n"
+            messages=current_messages)
+
+        chunk_response = (response.choices[0].message.content or "").strip()
+        response_text += chunk_response + "\n"
+        lectored_paragraphs.extend(
+            [para for para in chunk_response.split("\n\n") if para.strip()]
+        )
         progress_bar.update(1)
 
     progress_bar.close()
