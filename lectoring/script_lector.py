@@ -64,8 +64,6 @@ def lector_raw(repository):
         next_chunk = chunks[idx + 1] if idx + 1 < len(chunks) else ""
 
         user_message = ( 
-            "Nutze die Referenzen nur, um Konsistenz sicherzustellen. "
-            "Gib ausschließlich die bearbeitete Fassung des Abschnitts CURRENT zurück.\n\n"
             "REFERENCE_PREVIOUS:\n"
             f"{previous_context or '<none>'}\n\n"
             "CURRENT:\n"
