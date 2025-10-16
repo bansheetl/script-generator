@@ -2,19 +2,17 @@ import { Component, OnInit } from '@angular/core';
 import { Paragraph, SlideCandidate, SlideMatch, SlideMatchResult } from './app.model';
 import { AppState } from './app.reducers';
 import { Store } from '@ngrx/store';
-import { deleteSlideForParagraph, moveSlideToParagraph, redo, scriptLoaded, scriptSaved, selectSlideForParagraph, undo } from './app.actions';
+import { rejectSlideForParagraph, redo, scriptLoaded, scriptSaved, selectSlideForParagraph, undo } from './app.actions';
 import { Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { selectParagraphs, selectRedoHistoryExists, selectScriptEdited, selectUndoHistoryExists } from './app.selectors';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatSelectModule } from '@angular/material/select';
-import { MatGridListModule } from '@angular/material/grid-list';
-import { MatIconModule } from '@angular/material/icon';
-import { MatRadioModule } from '@angular/material/radio';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { ToolbarModule } from 'primeng/toolbar';
+import { SelectModule } from 'primeng/select';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { CarouselModule } from 'primeng/carousel';
 
 declare var fs: any;
 declare var path: any;
@@ -23,18 +21,15 @@ declare var path: any;
     selector: 'app-script-editor',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.css'],
-    imports: [
-        CommonModule,
-        FormsModule,
-        MatButtonModule,
-        MatCardModule,
-        MatToolbarModule,
-        MatSelectModule,
-        MatGridListModule,
-        MatIconModule,
-        MatRadioModule,
-        MatFormFieldModule,
-    ]
+  imports: [
+    CommonModule,
+    FormsModule,
+    ToolbarModule,
+    SelectModule,
+    ButtonModule,
+    CardModule,
+    CarouselModule,
+  ]
 })
 export class AppComponent implements OnInit {
 
@@ -45,8 +40,7 @@ export class AppComponent implements OnInit {
   scriptEdited$: Observable<boolean>;
   undoHistoryExists$: Observable<boolean>;
   redoHistoryExists$: Observable<boolean>;
-  scripts: string[] = [];
-  slideToMove: SlideCandidate | null = null;
+  scripts: ScriptOption[] = [];
   selectedScript: string | null = null;
   selectedSlide: Slide | null = null;
   allSlides: Slide[] = [];
@@ -62,20 +56,22 @@ export class AppComponent implements OnInit {
     const script_dirs = fs.readdirSync(AppComponent.SCRIPT_ROOT_DIR);
     script_dirs.forEach((script_dir: string) => {
       if (script_dir !== '.DS_Store' && this.hasRequiredFiles(AppComponent.SCRIPT_ROOT_DIR + '/' + script_dir)) {
-        this.scripts.push(script_dir);
+        this.scripts.push({ label: script_dir, value: script_dir });
       }
     });
-    console.log("Scripts loaded: ", this.scripts);
-    this.selectedScript = this.scripts[0];
-    this.onScriptSelected();
+    console.log("Scripts loaded: ", this.scripts.map(script => script.value));
+    if (this.scripts.length > 0) {
+      this.selectedScript = this.scripts[0].value;
+      this.onScriptSelected();
+    }
   }
 
   private hasRequiredFiles(dir: string): boolean {
     return fs.existsSync(dir + '/script.json') && fs.existsSync(dir + '/slide_matches.json');
   }
 
-  getParagraphClass(paragraph: Paragraph): string {
-    return paragraph.slideCandidates.length == 0 || paragraph.slideCandidates.some(sc => sc.selected) ? 'script-paragraph selected-paragraph' : 'script-paragraph open-paragraph';
+  hasSelectedSlide(paragraph: Paragraph): boolean {
+    return paragraph.slideCandidates?.some(sc => sc.selected) ?? false;
   }
 
   undo() {
@@ -87,7 +83,11 @@ export class AppComponent implements OnInit {
   }
 
   saveScript() {
-    this.paragraphs$.subscribe((paragraphs) => {
+    if (!this.selectedScript) {
+      return;
+    }
+
+  this.paragraphs$.pipe(take(1)).subscribe((paragraphs) => {
       const script = {
         content: paragraphs
       };
@@ -111,18 +111,15 @@ export class AppComponent implements OnInit {
     this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate: selectedSlide }));
   }
 
-  deleteSlideCandidate(paragraph: Paragraph, slideToDelete: SlideCandidate) {
-    this.store.dispatch(deleteSlideForParagraph({ paragraph, slideCandidate: slideToDelete }));
-  }
-
-  moveSlideToParagraph(paragraph: Paragraph) {
-    if (this.slideToMove) {
-      this.store.dispatch(moveSlideToParagraph({ slideCandidate: this.slideToMove, paragraph }));
-      this.slideToMove = null;
-    }
+  rejectSlideCandidate(paragraph: Paragraph, slideToReject: SlideCandidate) {
+    this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate: slideToReject }));
   }
 
   onScriptSelected(): void {
+    if (!this.selectedScript) {
+      return;
+    }
+
     fs.readFile(AppComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript + '/script.json', 'utf8', (err: any, data: any) => {
       if (err) {
         console.error('Error reading script:', err);
@@ -192,4 +189,9 @@ interface Slide {
   slide_name: string;
   slide_file: string;
   slideCandidate?: SlideCandidate;
+}
+
+interface ScriptOption {
+  label: string;
+  value: string;
 }

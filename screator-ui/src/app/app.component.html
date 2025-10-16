@@ -1,96 +1,105 @@
-<div class="scripts-container">
-  <div class="toolbar-wrapper">
-    <mat-toolbar>
-      <span>Screator</span>
-      <span class="tb-spacer"></span>
-      <mat-form-field class="image-select">
-        <mat-label>Slide chooser</mat-label>
-        <mat-select [(value)]="selectedSlide">
-          <mat-select-trigger>
-            {{ selectedSlide?.slide_name || ' ' }}
-          </mat-select-trigger>
-          @for (slide of allSlides; track slide) {
-            <mat-option [value]="slide">
-              <img [src]="slide.slide_file" class="slide-select-option">
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field class="script-select">
-        <mat-label>Selected script</mat-label>
-        <mat-select [(value)]="selectedScript" (selectionChange)="onScriptSelected()">
-          @for (script of scripts; track script) {
-            <mat-option [value]="script">
-              {{ script }}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <button mat-icon-button class="material-icons" [disabled]="!(undoHistoryExists$ | async)" (click)="undo()">
-        <mat-icon>undo</mat-icon>
-      </button>
-      <button mat-icon-button class="material-icons" [disabled]="!(redoHistoryExists$ | async)" (click)="redo()">
-        <mat-icon>redo</mat-icon>
-      </button>
-      <button mat-icon-button class="material-icons" [disabled]="!(scriptEdited$ | async)"
-        (click)="onScriptSelected()">
-        <mat-icon>refresh</mat-icon>
-      </button>
-      <button mat-raised-button [disabled]="!(scriptEdited$ | async)" (click)="saveScript()" class="tb-button">
-        Save script
-      </button>
-
-    </mat-toolbar>
-  </div>
-  <div class="content-wrapper">
+<div class="screator-app flex flex-column h-full surface-ground">
+  <p-toolbar class="screator-toolbar surface-card shadow-2">
+    <div class="w-full flex align-items-center flex-wrap gap-3">
+      <span class="app-title text-2xl font-semibold">Screator</span>
+      <span class="flex-grow-1"></span>
+      <div class="flex flex-column gap-1 dropdown-group">
+        <span class="dropdown-label text-sm text-600">Slide chooser</span>
+        <p-select class="slide-dropdown w-16rem" [options]="allSlides" optionLabel="slide_name"
+          [showClear]="true" [(ngModel)]="selectedSlide" placeholder="Choose a slide">
+          <ng-template pTemplate="selectedItem" let-slide>
+            @if (slide) {
+              <div class="flex align-items-center gap-2">
+                <img [src]="slide.slide_file" class="slide-select-option border-round" />
+                <span class="text-sm font-medium">{{ slide.slide_name }}</span>
+              </div>
+            } @else {
+              <span class="text-sm text-500">Choose a slide</span>
+            }
+          </ng-template>
+          <ng-template pTemplate="item" let-slide>
+            <div class="flex align-items-center gap-2">
+              <img [src]="slide.slide_file" class="slide-select-option border-round" />
+              <div class="flex flex-column">
+                <span class="font-medium">{{ slide.slide_name }}</span>
+              </div>
+            </div>
+          </ng-template>
+        </p-select>
+      </div>
+      <div class="flex flex-column gap-1 dropdown-group">
+        <span class="dropdown-label text-sm text-600">Selected script</span>
+        <p-select class="script-dropdown w-12rem" [options]="scripts" optionLabel="label" optionValue="value"
+          [(ngModel)]="selectedScript" placeholder="Choose script" (onChange)="onScriptSelected()"></p-select>
+      </div>
+      <div class="flex align-items-center gap-2 action-group">
+        <button pButton type="button" icon="pi pi-undo" class="p-button-rounded p-button-text"
+          [disabled]="!(undoHistoryExists$ | async)" (click)="undo()"></button>
+        <button pButton type="button" icon="pi pi-redo" class="p-button-rounded p-button-text"
+          [disabled]="!(redoHistoryExists$ | async)" (click)="redo()"></button>
+        <button pButton type="button" icon="pi pi-refresh" class="p-button-rounded p-button-text"
+          [disabled]="!(scriptEdited$ | async)" (click)="onScriptSelected()"></button>
+        <button pButton type="button" label="Save Script" icon="pi pi-save"
+          class="p-button-raised p-button-primary tb-button" [disabled]="!(scriptEdited$ | async)"
+          (click)="saveScript()"></button>
+      </div>
+    </div>
+  </p-toolbar>
+  <div class="content-wrapper flex-1 overflow-auto">
     @if (paragraphs$ | async; as paragraphs) {
-      <div>
-        <div class="paragraph-container">
-          <mat-radio-group [(ngModel)]="slideToMove">
-            @for (paragraph of paragraphs; track paragraph) {
-              <mat-card appearance="outlined"
-                [ngClass]="getParagraphClass(paragraph)">
-                <button mat-icon-button class="material-icons paste-button"
-                  (click)="moveSlideToParagraph(paragraph)" [disabled]="!slideToMove">
-                  <mat-icon>content_paste_go</mat-icon>
-                </button>
-                <button mat-icon-button class="material-icons insert-button" [disabled]="!selectedSlide"
-                  (click)="insertSelectedSlide(paragraph)">
-                  <mat-icon>download</mat-icon>
-                </button>
-                <div class="content-wrapper">
-                  <div class="slides-container">
-                    @for (slideCandidate of paragraph.slideCandidates; track slideCandidate) {
-                      <div class="slides-wrapper">
-                        <div class="slide-wrapper">
+      <div class="paragraph-container flex flex-column gap-4">
+        @for (paragraph of paragraphs; track paragraph) {
+          <div class="script-paragraph relative">
+            <div class="paragraph-actions flex gap-2">
+              <button pButton type="button" icon="pi pi-download" class="p-button-rounded p-button-outlined"
+                [disabled]="!selectedSlide" (click)="insertSelectedSlide(paragraph)"></button>
+            </div>
+            <div class="paragraph-layout flex align-items-start">
+              <div class="paragraph-content flex flex-column gap-4">
+                <div class="slides-column">
+                  @if (paragraph.slideCandidates?.length) {
+                    <p-carousel class="slide-carousel" [value]="paragraph.slideCandidates" [numVisible]="1" [numScroll]="1"
+                      [showIndicators]="false" [showNavigators]="paragraph.slideCandidates.length > 1"
+                      [circular]="paragraph.slideCandidates.length > 1">
+                      <ng-template pTemplate="item" let-slideCandidate>
+                        <div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden"
+                          [ngClass]="{ 'selected-slide': slideCandidate.selected, 'with-action-bar': !slideCandidate.selected }">
                           <img [src]="slideCandidate.slide_file" class="slide" />
                           <div class="overlay">
                             <div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
                           </div>
                           @if (!slideCandidate.selected) {
-                            <button mat-icon-button class="material-icons checkmark-button"
-                              (click)="selectSlideCandidate(paragraph, slideCandidate)">
-                              <mat-icon>check</mat-icon>
-                            </button>
+                            <div class="slide-action-bar">
+                              <button pButton type="button" icon="pi pi-check" label="Approve"
+                                class="slide-action-button approve-button"
+                                (click)="selectSlideCandidate(paragraph, slideCandidate)"></button>
+                              <button pButton type="button" icon="pi pi-times" label="Reject"
+                                class="slide-action-button reject-button"
+                                (click)="rejectSlideCandidate(paragraph, slideCandidate)"></button>
+                            </div>
                           }
-                          <button mat-icon-button class="material-icons delete-button"
-                            (click)="deleteSlideCandidate(paragraph, slideCandidate)"><mat-icon>delete</mat-icon></button>
-                            <mat-radio-button class="slide-move-selector"
-                              [name]="'move_' + slideCandidate.slide_file" [value]="slideCandidate">
-                            </mat-radio-button>
-                          </div>
                         </div>
-                      }
+                      </ng-template>
+                    </p-carousel>
+                  } @else {
+                    <div class="no-slides surface-border border-1 border-round-md text-sm text-500 p-3 text-center">
+                      No slide matches found
                     </div>
-                    <div class="paragraph-text">
-                      {{ paragraph.text }}
-                    </div>
+                  }
+                </div>
+                <div class="paragraph-text border-round surface-section shadow-1">
+                  @if (hasSelectedSlide(paragraph)) {
+                    <i class="pi pi-check-circle paragraph-status-icon"></i>
+                  }
+                  <div class="paragraph-text-body">
+                    {{ paragraph.text }}
                   </div>
-                </mat-card>
-              }
-            </mat-radio-group>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      }
-    </div>
+        }
+      </div>
+    }
   </div>
+</div>

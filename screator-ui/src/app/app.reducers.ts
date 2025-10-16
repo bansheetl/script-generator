@@ -1,5 +1,5 @@
 import { Action, createReducer, on } from '@ngrx/store';
-import { deleteSlideForParagraph, moveSlideToParagraph, redo, scriptLoaded, scriptSaved, selectSlideForParagraph, undo } from './app.actions';
+import { moveSlideToParagraph, redo, rejectSlideForParagraph, scriptLoaded, scriptSaved, selectSlideForParagraph, undo } from './app.actions';
 import { Paragraph, SlideCandidate } from './app.model';
 
 export interface AppState {
@@ -39,7 +39,7 @@ const _appReducer = createReducer(
             }
         })
     })),
-    on(deleteSlideForParagraph, (state, { paragraph, slideCandidate }) => ({
+    on(rejectSlideForParagraph, (state, { paragraph, slideCandidate }) => ({
         undoHistory: [...state.undoHistory, copyState(state)],
         redoHistory: [],
         scriptEdited: true,

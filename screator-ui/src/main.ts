@@ -4,6 +4,8 @@ import { AppComponent } from './app/app.component';
 import { provideStore } from '@ngrx/store';
 import { appReducer } from './app/app.reducers';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
+import { providePrimeNG } from 'primeng/config';
+import Lara from '@primeng/themes/lara';
 
 bootstrapApplication(AppComponent, {
   providers: [
@@ -11,6 +13,17 @@ bootstrapApplication(AppComponent, {
       app: appReducer
     }),
     provideStoreDevtools({ maxAge: 25, logOnly: false }),
+    providePrimeNG({
+      ripple: true,
+      theme: {
+        options: {
+          darkModeSelector: 'none',
+          cssLayer: {
+            name: 'primeng'
+          }
+        }
+      }
+    }),
     appConfig.providers
   ]
 })
