@@ -18,7 +18,11 @@ export const initialState: AppState = {
 
 function copyState(state: AppState): AppState {
     return {
-        paragraphs: state.paragraphs.map((p) => ({ ...p, slideCandidates: p.slideCandidates.map((sc) => ({ ...sc })) })),
+        paragraphs: state.paragraphs.map((p) => ({
+            ...p,
+            slideCandidates: p.slideCandidates.map((sc) => ({ ...sc })),
+            selectedSlides: (p.selectedSlides ?? []).map((sc) => ({ ...sc }))
+        })),
         scriptEdited: state.scriptEdited,
         undoHistory: state.undoHistory,
         redoHistory: state.redoHistory
@@ -33,9 +37,24 @@ const _appReducer = createReducer(
         scriptEdited: true,
         paragraphs: state.paragraphs.map((p) => {
             if (p.id === paragraph.id) {
-                return { ...p, slideCandidates: [{ ...slideCandidate, selected: true }] };
+                const currentCandidates = p.slideCandidates ?? [];
+                const currentSelected = p.selectedSlides ?? [];
+                const existingSelection = currentSelected.some((sc) => sc.slide_file === slideCandidate.slide_file);
+                const updatedSelected = existingSelection
+                    ? currentSelected.map((sc) => sc.slide_file === slideCandidate.slide_file ? { ...sc, selected: true } : { ...sc })
+                    : [...currentSelected.map((sc) => ({ ...sc })), { ...slideCandidate, selected: true }];
+                return {
+                    ...p,
+                    slideCandidates: currentCandidates.filter((sc) => sc.slide_file !== slideCandidate.slide_file),
+                    selectedSlides: updatedSelected
+                };
             } else {
-                return { ...p, slideCandidates: p.slideCandidates.filter((sc) => sc.slide_file !== slideCandidate.slide_file) };
+                const currentCandidates = p.slideCandidates ?? [];
+                return {
+                    ...p,
+                    slideCandidates: currentCandidates.filter((sc) => sc.slide_file !== slideCandidate.slide_file),
+                    selectedSlides: (p.selectedSlides ?? []).filter((sc) => sc.slide_file !== slideCandidate.slide_file)
+                };
             }
         })
     })),
@@ -45,7 +64,11 @@ const _appReducer = createReducer(
         scriptEdited: true,
         paragraphs: state.paragraphs.map((p) => {
             if (p.id === paragraph.id) {
-                return { ...p, slideCandidates: p.slideCandidates.filter((sc) => sc.slide_file !== slideCandidate.slide_file) };
+                return {
+                    ...p,
+                    slideCandidates: (p.slideCandidates ?? []).filter((sc) => sc.slide_file !== slideCandidate.slide_file),
+                    selectedSlides: (p.selectedSlides ?? []).filter((sc) => sc.slide_file !== slideCandidate.slide_file)
+                };
             } else {
                 return p;
             }
@@ -57,9 +80,24 @@ const _appReducer = createReducer(
         scriptEdited: true,
         paragraphs: state.paragraphs.map((p) => {
             if (p.id === paragraph.id) {
-                return { ...p, slideCandidates: [{ ...slideCandidate, selected: true }] };
+                const currentCandidates = p.slideCandidates ?? [];
+                const currentSelected = p.selectedSlides ?? [];
+                const existingSelection = currentSelected.some((sc) => sc.slide_file === slideCandidate.slide_file);
+                const updatedSelected = existingSelection
+                    ? currentSelected.map((sc) => sc.slide_file === slideCandidate.slide_file ? { ...sc, selected: true } : { ...sc })
+                    : [...currentSelected.map((sc) => ({ ...sc })), { ...slideCandidate, selected: true }];
+                return {
+                    ...p,
+                    slideCandidates: currentCandidates.filter((sc) => sc.slide_file !== slideCandidate.slide_file),
+                    selectedSlides: updatedSelected
+                };
             } else {
-                return { ...p, slideCandidates: p.slideCandidates.filter((sc) => sc.slide_file !== slideCandidate.slide_file) };
+                const currentCandidates = p.slideCandidates ?? [];
+                return {
+                    ...p,
+                    slideCandidates: currentCandidates.filter((sc) => sc.slide_file !== slideCandidate.slide_file),
+                    selectedSlides: (p.selectedSlides ?? []).filter((sc) => sc.slide_file !== slideCandidate.slide_file)
+                };
             }
         })
     })),
@@ -67,7 +105,11 @@ const _appReducer = createReducer(
         undoHistory: [],
         redoHistory: [],
         scriptEdited: false,
-        paragraphs
+        paragraphs: paragraphs.map((paragraph) => ({
+            ...paragraph,
+            slideCandidates: paragraph.slideCandidates ?? [],
+            selectedSlides: paragraph.selectedSlides ?? []
+        }))
     })),
     on(undo, (state) => {
         if (state.undoHistory.length > 0) {

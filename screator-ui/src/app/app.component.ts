@@ -71,6 +71,7 @@ export class AppComponent implements OnInit, OnDestroy {
   ];
 
   private paragraphViewModes: Record<number, SlideSelectionMode> = {};
+  private paragraphSelectionVisible: Record<number, boolean> = {};
   private paragraphsSnapshot: Paragraph[] = [];
   private paragraphsSubscription?: Subscription;
 
@@ -109,7 +110,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   hasSelectedSlide(paragraph: Paragraph): boolean {
-    return this.getSelectedSlideCandidate(paragraph) !== null;
+    return this.getSelectedSlides(paragraph).length > 0;
   }
 
   undo() {
@@ -125,7 +126,7 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-  this.paragraphs$.pipe(take(1)).subscribe((paragraphs) => {
+    this.paragraphs$.pipe(take(1)).subscribe((paragraphs) => {
       const script = {
         content: paragraphs
       };
@@ -140,10 +141,15 @@ export class AppComponent implements OnInit, OnDestroy {
 
   selectSlideCandidate(paragraph: Paragraph, selectedSlide: SlideCandidate) {
     this.paragraphViewModes[paragraph.id] = 'suggestions';
+    this.paragraphSelectionVisible[paragraph.id] = false;
     this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate: selectedSlide }));
   }
 
   rejectSlideCandidate(paragraph: Paragraph, slideToReject: SlideCandidate) {
+    const remainingCandidates = paragraph.slideCandidates.filter((candidate) => candidate.slide_file !== slideToReject.slide_file);
+    if (remainingCandidates.length === 0 && this.getSelectedSlides(paragraph).length === 0) {
+      this.paragraphSelectionVisible[paragraph.id] = false;
+    }
     this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate: slideToReject }));
   }
 
@@ -153,23 +159,26 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     this.paragraphViewModes = {};
+    this.paragraphSelectionVisible = {};
     this.allSlides = [];
     this.availableSlides = [];
-  this.paragraphsSnapshot = [];
+    this.paragraphsSnapshot = [];
 
-    fs.readFile(AppComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript + '/script.json', 'utf8', (err: any, data: any) => {
+    const baseDir = AppComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript;
+
+    fs.readFile(baseDir + '/script.json', 'utf8', (err: any, data: any) => {
       if (err) {
         console.error('Error reading script:', err);
         return;
       }
       const paragraphs = this.retrieveParagraphs(data);
-      fs.readFile(AppComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript + '/slide_matches.json', 'utf8', (err: any, data: any) => {
+      fs.readFile(baseDir + '/slide_matches.json', 'utf8', (err: any, data: any) => {
         if (err) {
           console.error('Error reading slide matches:', err);
           return;
         }
         this.addSlidesToParagraphs(data, paragraphs);
-        this.store.dispatch(scriptLoaded({ paragraphs }));
+        this.loadEditedSelections(baseDir, paragraphs);
       });
     });
   }
@@ -178,9 +187,13 @@ export class AppComponent implements OnInit, OnDestroy {
     try {
       const paragraphs: Paragraph[] = [];
       const jsonContent = JSON.parse(result as string);
-      jsonContent.content.forEach((paragraph_entry: Paragraph) => {
-        paragraph_entry.slideCandidates = [];
-        paragraphs.push(paragraph_entry);
+      jsonContent.content.forEach((paragraph_entry: any) => {
+        const paragraphData: Paragraph = {
+          ...paragraph_entry,
+          slideCandidates: [],
+          selectedSlides: paragraph_entry.selectedSlides ?? []
+        };
+        paragraphs.push(paragraphData);
       });
       console.log("Paragraphs loaded", paragraphs);
       return paragraphs;
@@ -209,22 +222,69 @@ export class AppComponent implements OnInit, OnDestroy {
             score: match.score,
             selected: false
           };
-          paragraph.slideCandidates.push(slideCandidate);
+          const alreadySelected = paragraph.selectedSlides.some((selectedSlide) => selectedSlide.slide_file === slideCandidate.slide_file);
+          if (!alreadySelected) {
+            paragraph.slideCandidates.push(slideCandidate);
+          }
         }
       });
     });
     this.updateAvailableSlides();
   }
 
-  getViewMode(paragraphId: number): SlideSelectionMode {
-    if (!this.paragraphViewModes[paragraphId]) {
-      this.paragraphViewModes[paragraphId] = 'suggestions';
+  private loadEditedSelections(baseDir: string, paragraphs: Paragraph[]) {
+    const editedPath = baseDir + '/script_edited.json';
+    if (fs.existsSync(editedPath)) {
+      fs.readFile(editedPath, 'utf8', (err: any, data: any) => {
+        if (err) {
+          console.error('Error reading edited script:', err);
+          this.initializeSelectionState(paragraphs);
+          this.store.dispatch(scriptLoaded({ paragraphs }));
+          return;
+        }
+        try {
+          const editedContent = JSON.parse(data)?.content ?? [];
+          editedContent.forEach((editedParagraph: Partial<Paragraph>) => {
+            const original = paragraphs.find((p) => p.id === editedParagraph.id);
+            if (!original) {
+              return;
+            }
+            const selectedSlides = (editedParagraph.selectedSlides && editedParagraph.selectedSlides.length > 0)
+              ? editedParagraph.selectedSlides
+              : (editedParagraph.slideCandidates?.filter((candidate) => candidate.selected) ?? []);
+            if (selectedSlides.length > 0) {
+              original.selectedSlides = selectedSlides.map((slide) => ({ ...slide, selected: true }));
+              original.slideCandidates = original.slideCandidates.filter((candidate) => !selectedSlides.some((slide) => slide.slide_file === candidate.slide_file));
+            }
+          });
+        } catch (parseError) {
+          console.error('Error parsing edited script:', parseError);
+        }
+        this.initializeSelectionState(paragraphs);
+        this.store.dispatch(scriptLoaded({ paragraphs }));
+      });
+    } else {
+      this.initializeSelectionState(paragraphs);
+      this.store.dispatch(scriptLoaded({ paragraphs }));
     }
-    return this.paragraphViewModes[paragraphId];
+  }
+
+  getViewMode(paragraph: Paragraph): SlideSelectionMode {
+    if (!this.paragraphViewModes[paragraph.id]) {
+      const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
+      this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
+    }
+    return this.paragraphViewModes[paragraph.id];
   }
 
   onModeChange(paragraphId: number, mode: SlideSelectionMode) {
     this.paragraphViewModes[paragraphId] = mode;
+  }
+
+  openSelection(paragraph: Paragraph) {
+    const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
+    this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
+    this.paragraphSelectionVisible[paragraph.id] = true;
   }
 
   getAvailableSlidesForParagraph(_paragraph: Paragraph): SlideOption[] {
@@ -245,16 +305,16 @@ export class AppComponent implements OnInit, OnDestroy {
 
     const slideCandidate: SlideCandidate = this.createCandidateFromSlide(slide);
     this.paragraphViewModes[paragraph.id] = 'library';
+    this.paragraphSelectionVisible[paragraph.id] = false;
     this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate }));
   }
 
   private updateAvailableSlides(): void {
     const assigned = new Set<string>();
     this.paragraphsSnapshot.forEach((paragraph) => {
-      const selected = this.getSelectedSlideCandidate(paragraph);
-      if (selected) {
+      paragraph.selectedSlides?.forEach((selected) => {
         assigned.add(selected.slide_file);
-      }
+      });
     });
 
     this.availableSlides = this.allSlides
@@ -262,8 +322,12 @@ export class AppComponent implements OnInit, OnDestroy {
       .map((slide) => ({ ...slide }));
   }
 
-  getSelectedSlideCandidate(paragraph: Paragraph): SlideCandidate | null {
-    return paragraph.slideCandidates?.find((sc) => sc.selected) ?? null;
+  getSelectedSlides(paragraph: Paragraph): SlideCandidate[] {
+    return paragraph.selectedSlides ?? [];
+  }
+
+  isSelectionVisible(paragraph: Paragraph): boolean {
+    return this.paragraphSelectionVisible[paragraph.id] ?? false;
   }
 
   findSlideByFile(slideFile: string): SlideOption | undefined {
@@ -276,6 +340,27 @@ export class AppComponent implements OnInit, OnDestroy {
       score: 0,
       selected: false
     };
+  }
+
+  removeSelectedSlide(paragraph: Paragraph, slideCandidate: SlideCandidate) {
+    const remainingSelected = (paragraph.selectedSlides ?? []).filter((selected) => selected.slide_file !== slideCandidate.slide_file);
+    if (remainingSelected.length === 0) {
+      const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
+      this.paragraphSelectionVisible[paragraph.id] = hasCandidates;
+    } else {
+      this.paragraphSelectionVisible[paragraph.id] = false;
+    }
+    this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate }));
+  }
+
+  private initializeSelectionState(paragraphs: Paragraph[]): void {
+    this.paragraphSelectionVisible = {};
+    paragraphs.forEach((paragraph) => {
+      const hasSelected = (paragraph.selectedSlides ?? []).length > 0;
+      const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
+      this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
+      this.paragraphSelectionVisible[paragraph.id] = hasSelected ? false : hasCandidates;
+    });
   }
 
 }

@@ -20,9 +20,13 @@ def create_asciidoc_script(json_path):
         
         for paragraph in paragraphs:
             tqdm.tqdm.write(f"Writing paragraph {paragraph['id']}")
-            slides = paragraph.get('slideCandidates', [])
-            if (len(slides) == 1):
-                writer.write(f"image::{os.path.basename(slides[0]['slide_file'])}[]\n\n")
+            slides = paragraph.get('selectedSlides')
+            if not slides:
+                slides = [candidate for candidate in paragraph.get('slideCandidates', []) if candidate.get('selected')]
+            for slide in slides or []:
+                slide_file = slide.get('slide_file')
+                if slide_file:
+                    writer.write(f"image::{os.path.basename(slide_file)}[]\n\n")
             writer.write(f"{paragraph['text']}\n\n")
             progress_bar.update(1)
             
@@ -36,16 +40,16 @@ if __name__ == '__main__':
         sys.exit(1)
 
     directory = sys.argv[1]
-    json_path = os.path.join(directory, 'script_edited.json')
+    script_json_path = os.path.join(directory, 'script_edited.json')
 
-    if not os.path.isfile(json_path):
-        print(f"Error: {json_path} does not exist.")
+    if not os.path.isfile(script_json_path):
+        print(f"Error: {script_json_path} does not exist.")
         sys.exit(1)
         
-    create_asciidoc_script(json_path)
+    create_asciidoc_script(script_json_path)
     
-    adoc_file_path = json_path.replace(".json", ".adoc")
-    pdf_file_path = json_path.replace(".json", ".pdf")
+    adoc_file_path = script_json_path.replace(".json", ".adoc")
+    pdf_file_path = script_json_path.replace(".json", ".pdf")
 
     try:
         subprocess.run(['asciidoctor-pdf', adoc_file_path, '-o', pdf_file_path], check=True)

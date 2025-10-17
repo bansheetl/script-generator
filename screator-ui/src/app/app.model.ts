@@ -3,6 +3,7 @@ export interface Paragraph {
     id: number;
     text: string;
     slideCandidates: SlideCandidate[];
+    selectedSlides: SlideCandidate[];
 }
 
 export interface SlideCandidate {
