@@ -138,4 +138,14 @@
       </div>
     }
   </div>
+  @if (completionStats.total > 0) {
+    <div class="paragraph-progress-overlay shadow-3">
+      <div class="progress-track">
+        <div class="progress-fill" [style.width.%]="completionStats.percentage"></div>
+      </div>
+      <span class="progress-label text-sm">
+        {{ completionStats.completed }} / {{ completionStats.total }} completed · {{ completionStats.open }} open
+      </span>
+    </div>
+  }
 </div>

@@ -46,6 +46,7 @@ export class AppComponent implements OnInit, OnDestroy {
   selectedScript: string | null = null;
   allSlides: SlideOption[] = [];
   availableSlides: SlideOption[] = [];
+  completionStats: CompletionStats = { total: 0, completed: 0, open: 0, percentage: 0 };
 
   modeOptions: ModeOption[] = [
     { label: 'Suggestions', value: 'suggestions' },
@@ -100,6 +101,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.paragraphsSnapshot = paragraphs ?? [];
       this.cleanupParagraphState(this.paragraphsSnapshot);
       this.updateAvailableSlides();
+      this.updateCompletionStats();
     });
   }
 
@@ -142,6 +144,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.paragraphSelectionVisible[paragraph.id] = false;
     delete this.paragraphCompletionOverrides[paragraph.id];
     this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate: selectedSlide }));
+    this.updateCompletionStats();
   }
 
   rejectSlideCandidate(paragraph: Paragraph, slideToReject: SlideCandidate) {
@@ -151,6 +154,7 @@ export class AppComponent implements OnInit, OnDestroy {
       delete this.paragraphCompletionOverrides[paragraph.id];
     }
     this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate: slideToReject }));
+    this.updateCompletionStats();
   }
 
   onScriptSelected(): void {
@@ -160,10 +164,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.paragraphViewModes = {};
     this.paragraphSelectionVisible = {};
-  this.paragraphCompletionOverrides = {};
+    this.paragraphCompletionOverrides = {};
     this.allSlides = [];
     this.availableSlides = [];
     this.paragraphsSnapshot = [];
+    this.updateCompletionStats();
 
     const baseDir = AppComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript;
 
@@ -287,6 +292,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
     this.paragraphSelectionVisible[paragraph.id] = true;
     delete this.paragraphCompletionOverrides[paragraph.id];
+    this.updateCompletionStats();
   }
 
   getAvailableSlidesForParagraph(_paragraph: Paragraph): SlideOption[] {
@@ -310,6 +316,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.paragraphSelectionVisible[paragraph.id] = false;
     delete this.paragraphCompletionOverrides[paragraph.id];
     this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate }));
+    this.updateCompletionStats();
   }
 
   private updateAvailableSlides(): void {
@@ -356,6 +363,7 @@ export class AppComponent implements OnInit, OnDestroy {
       delete this.paragraphCompletionOverrides[paragraph.id];
     }
     this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate }));
+    this.updateCompletionStats();
   }
 
   private initializeSelectionState(paragraphs: Paragraph[]): void {
@@ -367,6 +375,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
       this.paragraphSelectionVisible[paragraph.id] = hasSelected ? false : hasCandidates;
     });
+    this.updateCompletionStats();
   }
 
   cancelSelection(paragraph: Paragraph) {
@@ -377,6 +386,7 @@ export class AppComponent implements OnInit, OnDestroy {
     } else {
       delete this.paragraphCompletionOverrides[paragraph.id];
     }
+    this.updateCompletionStats();
   }
 
   isParagraphCompleted(paragraph: Paragraph): boolean {
@@ -393,6 +403,16 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     return this.paragraphCompletionOverrides[paragraph.id] ?? false;
+  }
+
+  private updateCompletionStats(): void {
+    const total = this.paragraphsSnapshot.length;
+    const completed = this.paragraphsSnapshot.reduce((count, paragraph) => (
+      this.isParagraphCompleted(paragraph) ? count + 1 : count
+    ), 0);
+    const open = total - completed;
+    const percentage = total > 0 ? (completed / total) * 100 : 0;
+    this.completionStats = { total, completed, open, percentage };
   }
 
   private cleanupParagraphState(paragraphs: Paragraph[]): void {
@@ -441,4 +461,11 @@ type SlideSelectionMode = 'suggestions' | 'library';
 interface ModeOption {
   label: string;
   value: SlideSelectionMode;
+}
+
+interface CompletionStats {
+  total: number;
+  completed: number;
+  open: number;
+  percentage: number;
 }
