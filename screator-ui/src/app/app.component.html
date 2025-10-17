@@ -58,6 +58,11 @@
                     </div>
                   }
                   @if (isSelectionVisible(paragraph)) {
+                    <div class="selection-header">
+                      <button pButton type="button" icon="pi pi-times" label="Cancel"
+                        class="selection-cancel-button p-button-text"
+                        (click)="cancelSelection(paragraph)"></button>
+                    </div>
                     <div class="slide-mode-switch-container">
                       <p-selectbutton class="slide-mode-switch" [options]="modeOptions" optionLabel="label" optionValue="value"
                         [ngModel]="getViewMode(paragraph)" (onChange)="onModeChange(paragraph.id, $event.value)" fluid></p-selectbutton>
@@ -119,7 +124,7 @@
                   }
                 </div>
                 <div class="paragraph-text border-round surface-section shadow-1">
-                  @if (hasSelectedSlide(paragraph)) {
+                  @if (isParagraphCompleted(paragraph)) {
                     <i class="pi pi-check-circle paragraph-status-icon"></i>
                   }
                   <div class="paragraph-text-body">

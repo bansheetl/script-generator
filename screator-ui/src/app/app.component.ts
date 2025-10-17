@@ -72,6 +72,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private paragraphViewModes: Record<number, SlideSelectionMode> = {};
   private paragraphSelectionVisible: Record<number, boolean> = {};
+  private paragraphCompletionOverrides: Record<number, boolean> = {};
   private paragraphsSnapshot: Paragraph[] = [];
   private paragraphsSubscription?: Subscription;
 
@@ -97,6 +98,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.paragraphsSubscription = this.paragraphs$.subscribe((paragraphs) => {
       this.paragraphsSnapshot = paragraphs ?? [];
+      this.cleanupParagraphState(this.paragraphsSnapshot);
       this.updateAvailableSlides();
     });
   }
@@ -107,10 +109,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private hasRequiredFiles(dir: string): boolean {
     return fs.existsSync(dir + '/script.json') && fs.existsSync(dir + '/slide_matches.json');
-  }
-
-  hasSelectedSlide(paragraph: Paragraph): boolean {
-    return this.getSelectedSlides(paragraph).length > 0;
   }
 
   undo() {
@@ -142,6 +140,7 @@ export class AppComponent implements OnInit, OnDestroy {
   selectSlideCandidate(paragraph: Paragraph, selectedSlide: SlideCandidate) {
     this.paragraphViewModes[paragraph.id] = 'suggestions';
     this.paragraphSelectionVisible[paragraph.id] = false;
+    delete this.paragraphCompletionOverrides[paragraph.id];
     this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate: selectedSlide }));
   }
 
@@ -149,6 +148,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const remainingCandidates = paragraph.slideCandidates.filter((candidate) => candidate.slide_file !== slideToReject.slide_file);
     if (remainingCandidates.length === 0 && this.getSelectedSlides(paragraph).length === 0) {
       this.paragraphSelectionVisible[paragraph.id] = false;
+      delete this.paragraphCompletionOverrides[paragraph.id];
     }
     this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate: slideToReject }));
   }
@@ -160,6 +160,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.paragraphViewModes = {};
     this.paragraphSelectionVisible = {};
+  this.paragraphCompletionOverrides = {};
     this.allSlides = [];
     this.availableSlides = [];
     this.paragraphsSnapshot = [];
@@ -285,6 +286,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
     this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
     this.paragraphSelectionVisible[paragraph.id] = true;
+    delete this.paragraphCompletionOverrides[paragraph.id];
   }
 
   getAvailableSlidesForParagraph(_paragraph: Paragraph): SlideOption[] {
@@ -306,6 +308,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const slideCandidate: SlideCandidate = this.createCandidateFromSlide(slide);
     this.paragraphViewModes[paragraph.id] = 'library';
     this.paragraphSelectionVisible[paragraph.id] = false;
+    delete this.paragraphCompletionOverrides[paragraph.id];
     this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate }));
   }
 
@@ -347,8 +350,10 @@ export class AppComponent implements OnInit, OnDestroy {
     if (remainingSelected.length === 0) {
       const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
       this.paragraphSelectionVisible[paragraph.id] = hasCandidates;
+      delete this.paragraphCompletionOverrides[paragraph.id];
     } else {
       this.paragraphSelectionVisible[paragraph.id] = false;
+      delete this.paragraphCompletionOverrides[paragraph.id];
     }
     this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate }));
   }
@@ -358,8 +363,60 @@ export class AppComponent implements OnInit, OnDestroy {
     paragraphs.forEach((paragraph) => {
       const hasSelected = (paragraph.selectedSlides ?? []).length > 0;
       const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
+      delete this.paragraphCompletionOverrides[paragraph.id];
       this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
       this.paragraphSelectionVisible[paragraph.id] = hasSelected ? false : hasCandidates;
+    });
+  }
+
+  cancelSelection(paragraph: Paragraph) {
+    this.paragraphSelectionVisible[paragraph.id] = false;
+    const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
+    if (hasCandidates) {
+      this.paragraphCompletionOverrides[paragraph.id] = true;
+    } else {
+      delete this.paragraphCompletionOverrides[paragraph.id];
+    }
+  }
+
+  isParagraphCompleted(paragraph: Paragraph): boolean {
+    if (this.isSelectionVisible(paragraph)) {
+      return false;
+    }
+
+    if (this.getSelectedSlides(paragraph).length > 0) {
+      return true;
+    }
+
+    if ((paragraph.slideCandidates ?? []).length === 0) {
+      return true;
+    }
+
+    return this.paragraphCompletionOverrides[paragraph.id] ?? false;
+  }
+
+  private cleanupParagraphState(paragraphs: Paragraph[]): void {
+    const validIds = new Set(paragraphs.map((paragraph) => paragraph.id));
+
+    Object.keys(this.paragraphCompletionOverrides).forEach((key) => {
+      const id = Number(key);
+      if (!validIds.has(id)) {
+        delete this.paragraphCompletionOverrides[id];
+      }
+    });
+
+    Object.keys(this.paragraphSelectionVisible).forEach((key) => {
+      const id = Number(key);
+      if (!validIds.has(id)) {
+        delete this.paragraphSelectionVisible[id];
+      }
+    });
+
+    Object.keys(this.paragraphViewModes).forEach((key) => {
+      const id = Number(key);
+      if (!validIds.has(id)) {
+        delete this.paragraphViewModes[id];
+      }
     });
   }
 

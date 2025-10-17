@@ -65,6 +65,16 @@
     gap: 1.25rem;
 }
 
+.selection-header {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.selection-cancel-button {
+    margin-bottom: 0.5rem;
+}
+
 .slide-mode-switch-container {
     display: flex;
     justify-content: center;
