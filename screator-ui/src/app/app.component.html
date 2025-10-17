@@ -1,7 +1,28 @@
 <div class="screator-app flex flex-column h-full surface-ground">
   <p-toolbar class="screator-toolbar surface-card shadow-2">
     <div class="w-full flex align-items-center flex-wrap gap-3">
-      <span class="app-title text-2xl font-semibold">Screator</span>
+  <div class="app-logo" aria-label="Screator logo" role="img">
+    <svg class="app-logo-svg" width="36" height="36" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bgToolbar" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#1d4ed8"/>
+          <stop offset="50%" stop-color="#2563eb"/>
+          <stop offset="100%" stop-color="#3b82f6"/>
+        </linearGradient>
+        <linearGradient id="penToolbar" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fbbf24"/>
+          <stop offset="100%" stop-color="#f59e0b"/>
+        </linearGradient>
+      </defs>
+      <rect width="128" height="128" rx="26" fill="url(#bgToolbar)" />
+      <path d="M36 34c0-6 5-10 10-10h46c2 0 4 2 4 4v72c0 10-8 18-18 18H54c-6 0-10-5-10-10V34Z" fill="#ffffff" fill-opacity="0.95"/>
+      <path d="M54 36h32M54 50h32M54 64h32M54 78h24" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round" />
+      <path d="M42 96l14-6 34-34c2-2 2-5 0-7-2-2-5-2-7 0L49 83l-6 13Z" fill="url(#penToolbar)" />
+      <path d="M42 96l6-12 8 8-14 4Z" fill="#92400e" opacity="0.55" />
+      <circle cx="84" cy="58" r="6" fill="#fff" fill-opacity="0.35" />
+    </svg>
+  </div>
+  <span class="app-title text-2xl font-semibold">Screator</span>
       <span class="flex-grow-1"></span>
       <div class="flex flex-column gap-1 dropdown-group">
         <span class="dropdown-label text-sm text-600">Selected script</span>

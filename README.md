@@ -103,3 +103,7 @@ npm --prefix screator-ui run test
 - Ensure Poppler is installed and on your `PATH` before running slide interpretation (`pdf2image` dependency).
 - Re-run `python main.py ...` if you change input files; cached outputs can be deleted from `output/<id>/` when a clean run is required.
 - Azure resource errors typically indicate missing or misconfigured keys in `config.properties`.
+
+## Application Logo
+
+The desktop UI toolbar displays a modern scroll & pen logo (symbolizing authored scripts) sourced from `screator-ui/public/icons/app-icon.svg`. A PNG fallback (`screator-ui/public/icons/app-icon.png`) is referenced by Electron in `screator-ui/main.js` via the BrowserWindow `icon` option. For macOS packaging, supply a dedicated `.icns` file during bundling if you need a custom dock icon; the development run will still use the PNG. The SVG is optimized for scaling and can be updated without changing any code paths as long as the filename remains the same.
