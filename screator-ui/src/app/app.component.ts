@@ -1,15 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Paragraph, SlideCandidate, SlideMatch, SlideMatchResult } from './app.model';
 import { AppState } from './app.reducers';
 import { Store } from '@ngrx/store';
 import { rejectSlideForParagraph, redo, scriptLoaded, scriptSaved, selectSlideForParagraph, undo } from './app.actions';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { selectParagraphs, selectRedoHistoryExists, selectScriptEdited, selectUndoHistoryExists } from './app.selectors';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToolbarModule } from 'primeng/toolbar';
 import { SelectModule } from 'primeng/select';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CarouselModule } from 'primeng/carousel';
@@ -26,12 +27,13 @@ declare var path: any;
     FormsModule,
     ToolbarModule,
     SelectModule,
+    SelectButtonModule,
     ButtonModule,
     CardModule,
     CarouselModule,
   ]
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
 
   static readonly SLIDE_PREFIX = '../../../../../';
   static readonly SCRIPT_ROOT_DIR = '../output';
@@ -42,8 +44,35 @@ export class AppComponent implements OnInit {
   redoHistoryExists$: Observable<boolean>;
   scripts: ScriptOption[] = [];
   selectedScript: string | null = null;
-  selectedSlide: Slide | null = null;
-  allSlides: Slide[] = [];
+  allSlides: SlideOption[] = [];
+  availableSlides: SlideOption[] = [];
+
+  modeOptions: ModeOption[] = [
+    { label: 'Suggestions', value: 'suggestions' },
+    { label: 'Slide library', value: 'library' }
+  ];
+
+  responsiveOptions = [
+    {
+      breakpoint: '1200px',
+      numVisible: 3,
+      numScroll: 1
+    },
+    {
+      breakpoint: '992px',
+      numVisible: 2,
+      numScroll: 1
+    },
+    {
+      breakpoint: '768px',
+      numVisible: 1,
+      numScroll: 1
+    }
+  ];
+
+  private paragraphViewModes: Record<number, SlideSelectionMode> = {};
+  private paragraphsSnapshot: Paragraph[] = [];
+  private paragraphsSubscription?: Subscription;
 
   constructor(private store: Store<AppState>) {
     this.paragraphs$ = this.store.select(selectParagraphs);
@@ -64,6 +93,15 @@ export class AppComponent implements OnInit {
       this.selectedScript = this.scripts[0].value;
       this.onScriptSelected();
     }
+
+    this.paragraphsSubscription = this.paragraphs$.subscribe((paragraphs) => {
+      this.paragraphsSnapshot = paragraphs ?? [];
+      this.updateAvailableSlides();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.paragraphsSubscription?.unsubscribe();
   }
 
   private hasRequiredFiles(dir: string): boolean {
@@ -71,7 +109,7 @@ export class AppComponent implements OnInit {
   }
 
   hasSelectedSlide(paragraph: Paragraph): boolean {
-    return paragraph.slideCandidates?.some(sc => sc.selected) ?? false;
+    return this.getSelectedSlideCandidate(paragraph) !== null;
   }
 
   undo() {
@@ -100,14 +138,8 @@ export class AppComponent implements OnInit {
     this.store.dispatch(scriptSaved());
   }
 
-  insertSelectedSlide(paragraph: Paragraph) {
-    if (this.selectedSlide && this.selectedSlide.slideCandidate) {
-      const slideCandidate = this.selectedSlide.slideCandidate
-      this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate }));
-    }
-  }
-
   selectSlideCandidate(paragraph: Paragraph, selectedSlide: SlideCandidate) {
+    this.paragraphViewModes[paragraph.id] = 'suggestions';
     this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate: selectedSlide }));
   }
 
@@ -119,6 +151,11 @@ export class AppComponent implements OnInit {
     if (!this.selectedScript) {
       return;
     }
+
+    this.paragraphViewModes = {};
+    this.allSlides = [];
+    this.availableSlides = [];
+  this.paragraphsSnapshot = [];
 
     fs.readFile(AppComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript + '/script.json', 'utf8', (err: any, data: any) => {
       if (err) {
@@ -158,29 +195,87 @@ export class AppComponent implements OnInit {
     console.log("Slides loaded", jsonContent)
     this.allSlides = [];
     jsonContent.forEach((slideMatch: SlideMatch) => {
+      const slidePath = AppComponent.SLIDE_PREFIX + slideMatch.slide_file;
       const slide: Slide = {
         slide_name: path.basename(slideMatch.slide_file),
-        slide_file: AppComponent.SLIDE_PREFIX + slideMatch.slide_file,
-        slideCandidate: {
-          slide_file: AppComponent.SLIDE_PREFIX + slideMatch.slide_file,
-          score: 0,
-          selected: false
-        }
-      }
+        slide_file: slidePath
+      };
       this.allSlides.push(slide);
       slideMatch.results.forEach((match: SlideMatchResult) => {
         const paragraph = paragraphs[parseInt(match.paragraph_id) - 1];
         if (paragraph) {
           const slideCandidate = {
-            slide_file: AppComponent.SLIDE_PREFIX + slideMatch.slide_file,
+            slide_file: slidePath,
             score: match.score,
             selected: false
           };
-          slide.slideCandidate = slideCandidate;
           paragraph.slideCandidates.push(slideCandidate);
         }
       });
     });
+    this.updateAvailableSlides();
+  }
+
+  getViewMode(paragraphId: number): SlideSelectionMode {
+    if (!this.paragraphViewModes[paragraphId]) {
+      this.paragraphViewModes[paragraphId] = 'suggestions';
+    }
+    return this.paragraphViewModes[paragraphId];
+  }
+
+  onModeChange(paragraphId: number, mode: SlideSelectionMode) {
+    this.paragraphViewModes[paragraphId] = mode;
+  }
+
+  getAvailableSlidesForParagraph(_paragraph: Paragraph): SlideOption[] {
+    return this.availableSlides
+      .map((slide) => ({ ...slide }))
+      .sort((a, b) => a.slide_name.localeCompare(b.slide_name));
+  }
+
+  onLibrarySlideChosen(paragraph: Paragraph, slideFile: string | null) {
+    if (!slideFile) {
+      return;
+    }
+
+    const slide = this.findSlideByFile(slideFile);
+    if (!slide) {
+      return;
+    }
+
+    const slideCandidate: SlideCandidate = this.createCandidateFromSlide(slide);
+    this.paragraphViewModes[paragraph.id] = 'library';
+    this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate }));
+  }
+
+  private updateAvailableSlides(): void {
+    const assigned = new Set<string>();
+    this.paragraphsSnapshot.forEach((paragraph) => {
+      const selected = this.getSelectedSlideCandidate(paragraph);
+      if (selected) {
+        assigned.add(selected.slide_file);
+      }
+    });
+
+    this.availableSlides = this.allSlides
+      .filter((slide) => !assigned.has(slide.slide_file))
+      .map((slide) => ({ ...slide }));
+  }
+
+  getSelectedSlideCandidate(paragraph: Paragraph): SlideCandidate | null {
+    return paragraph.slideCandidates?.find((sc) => sc.selected) ?? null;
+  }
+
+  findSlideByFile(slideFile: string): SlideOption | undefined {
+    return this.allSlides.find((slide) => slide.slide_file === slideFile);
+  }
+
+  private createCandidateFromSlide(slide: Slide): SlideCandidate {
+    return {
+      slide_file: slide.slide_file,
+      score: 0,
+      selected: false
+    };
   }
 
 }
@@ -188,10 +283,20 @@ export class AppComponent implements OnInit {
 interface Slide {
   slide_name: string;
   slide_file: string;
-  slideCandidate?: SlideCandidate;
 }
 
 interface ScriptOption {
   label: string;
   value: string;
+}
+
+interface SlideOption extends Slide {
+  disabled?: boolean;
+}
+
+type SlideSelectionMode = 'suggestions' | 'library';
+
+interface ModeOption {
+  label: string;
+  value: SlideSelectionMode;
 }

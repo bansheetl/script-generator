@@ -1,6 +1,6 @@
 :host {
     --paragraph-content-width: 60%;
-    --slide-action-height: 3rem;
+    --slide-action-height: 1.5rem;
 }
 
 .screator-toolbar {
@@ -23,13 +23,6 @@
     letter-spacing: 0.02em;
 }
 
-.slide-select-option {
-    width: 4rem;
-    height: 2.5rem;
-    object-fit: cover;
-    box-shadow: var(--shadow-1, 0 1px 2px rgba(0,0,0,0.08));
-}
-
 .content-wrapper {
     padding: 2rem;
     box-sizing: border-box;
@@ -42,13 +35,6 @@
 .script-paragraph {
     padding: 1.5rem 0;
 }
-
-.paragraph-actions {
-    position: absolute;
-    top: 0.5rem;
-    right: calc((100% - var(--paragraph-content-width, 60%)) / 2);
-}
-
 
 .paragraph-layout {
     margin-top: 0.5rem;
@@ -63,7 +49,7 @@
 
 .paragraph-content {
     margin-top: 0;
-    align-items: center;
+    align-items: stretch;
     width: var(--paragraph-content-width, 60%);
     max-width: 60rem;
     margin-left: auto;
@@ -74,7 +60,19 @@
 .slides-column {
     width: 100%;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.slide-mode-switch-container {
+    display: flex;
     justify-content: center;
+    width: 100%;
+}
+
+:host ::ng-deep .slide-mode-switch .p-selectbutton .p-button {
+    padding: 0.5rem 1.25rem;
 }
 
 :host ::ng-deep .slide-carousel {
@@ -83,11 +81,38 @@
 }
 
 :host ::ng-deep .slide-carousel .p-carousel-content {
-    padding: 0 3rem;
+    padding: 0 1.25rem;
+}
+
+:host ::ng-deep .slide-carousel .p-carousel-item {
+    padding: 0 0.5rem;
 }
 
 .no-slides {
     width: 100%;
+}
+
+.library-slide-caption {
+    border-top: 1px solid var(--surface-border, #dcdfe4);
+}
+
+.library-slide-image {
+    position: relative;
+}
+
+.selected-slide-display {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-card, #ffffff);
+}
+
+.selected-slide-image {
+    position: relative;
+}
+
+.selected-slide-caption {
+    border-top: 1px solid var(--surface-border, #dcdfe4);
 }
 
 :host ::ng-deep .slide-carousel .p-carousel-prev,
@@ -110,6 +135,10 @@
     object-fit: contain;
     display: block;
     background: var(--surface-section, #f8fafc);
+}
+
+.library-card .slide-action-bar {
+    border-top: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .selected-slide {
@@ -151,7 +180,7 @@
     flex: 1;
     border-radius: 0;
     border: none;
-    height: var(--slide-action-height, 3rem);
+    height: var(--slide-action-height, 1.5rem);
     display: inline-flex;
     justify-content: center;
 }
@@ -164,6 +193,14 @@
 :host ::ng-deep .slide-action-button.p-button .p-button-label,
 :host ::ng-deep .slide-action-button.p-button .p-button-icon {
     color: var(--surface-0, #ffffff);
+}
+
+:host ::ng-deep .insert-button.p-button {
+    background: var(--primary-color, #3b82f6);
+}
+
+:host ::ng-deep .insert-button.p-button:enabled:hover {
+    background: #2563eb;
 }
 
 :host ::ng-deep .approve-button.p-button {
@@ -206,14 +243,13 @@
     line-height: 1.6;
     width: 100%;
     margin: 0 auto;
-    align-self: center;
+    align-self: stretch;
 }
 
 .paragraph-text-body {
     white-space: pre-line;
     flex: 1;
 }
-
 .app-title {
     letter-spacing: 0.08rem;
 }
@@ -239,11 +275,6 @@
         padding: 1.5rem 0;
     }
 
-    .paragraph-actions {
-        position: static;
-        margin-bottom: 1rem;
-    }
-
     .paragraph-layout {
         flex-direction: column;
         gap: 1rem;
@@ -253,7 +284,15 @@
         width: 100%;
     }
 
+    .slide-mode-switch-container {
+        justify-content: center;
+    }
+
     :host ::ng-deep .slide-carousel .p-carousel-content {
+        padding: 0;
+    }
+
+    :host ::ng-deep .slide-carousel .p-carousel-item {
         padding: 0;
     }
 }

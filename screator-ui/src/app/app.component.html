@@ -4,30 +4,6 @@
       <span class="app-title text-2xl font-semibold">Screator</span>
       <span class="flex-grow-1"></span>
       <div class="flex flex-column gap-1 dropdown-group">
-        <span class="dropdown-label text-sm text-600">Slide chooser</span>
-        <p-select class="slide-dropdown w-16rem" [options]="allSlides" optionLabel="slide_name"
-          [showClear]="true" [(ngModel)]="selectedSlide" placeholder="Choose a slide">
-          <ng-template pTemplate="selectedItem" let-slide>
-            @if (slide) {
-              <div class="flex align-items-center gap-2">
-                <img [src]="slide.slide_file" class="slide-select-option border-round" />
-                <span class="text-sm font-medium">{{ slide.slide_name }}</span>
-              </div>
-            } @else {
-              <span class="text-sm text-500">Choose a slide</span>
-            }
-          </ng-template>
-          <ng-template pTemplate="item" let-slide>
-            <div class="flex align-items-center gap-2">
-              <img [src]="slide.slide_file" class="slide-select-option border-round" />
-              <div class="flex flex-column">
-                <span class="font-medium">{{ slide.slide_name }}</span>
-              </div>
-            </div>
-          </ng-template>
-        </p-select>
-      </div>
-      <div class="flex flex-column gap-1 dropdown-group">
         <span class="dropdown-label text-sm text-600">Selected script</span>
         <p-select class="script-dropdown w-12rem" [options]="scripts" optionLabel="label" optionValue="value"
           [(ngModel)]="selectedScript" placeholder="Choose script" (onChange)="onScriptSelected()"></p-select>
@@ -50,41 +26,83 @@
       <div class="paragraph-container flex flex-column gap-4">
         @for (paragraph of paragraphs; track paragraph) {
           <div class="script-paragraph relative">
-            <div class="paragraph-actions flex gap-2">
-              <button pButton type="button" icon="pi pi-download" class="p-button-rounded p-button-outlined"
-                [disabled]="!selectedSlide" (click)="insertSelectedSlide(paragraph)"></button>
-            </div>
             <div class="paragraph-layout flex align-items-start">
               <div class="paragraph-content flex flex-column gap-4">
                 <div class="slides-column">
-                  @if (paragraph.slideCandidates?.length) {
-                    <p-carousel class="slide-carousel" [value]="paragraph.slideCandidates" [numVisible]="1" [numScroll]="1"
-                      [showIndicators]="false" [showNavigators]="paragraph.slideCandidates.length > 1"
-                      [circular]="paragraph.slideCandidates.length > 1">
-                      <ng-template pTemplate="item" let-slideCandidate>
-                        <div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden"
-                          [ngClass]="{ 'selected-slide': slideCandidate.selected, 'with-action-bar': !slideCandidate.selected }">
-                          <img [src]="slideCandidate.slide_file" class="slide" />
-                          <div class="overlay">
-                            <div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
-                          </div>
-                          @if (!slideCandidate.selected) {
-                            <div class="slide-action-bar">
-                              <button pButton type="button" icon="pi pi-check" label="Approve"
-                                class="slide-action-button approve-button"
-                                (click)="selectSlideCandidate(paragraph, slideCandidate)"></button>
-                              <button pButton type="button" icon="pi pi-times" label="Reject"
-                                class="slide-action-button reject-button"
-                                (click)="rejectSlideCandidate(paragraph, slideCandidate)"></button>
-                            </div>
-                          }
+                  @if (getSelectedSlideCandidate(paragraph); as selectedSlide) {
+                    <div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden selected-slide-display">
+                      <div class="selected-slide-image">
+                        <img [src]="selectedSlide.slide_file" class="slide" />
+                        <div class="overlay">
+                          <div class="score-bar" [style.width.%]="selectedSlide.score * 100"></div>
                         </div>
-                      </ng-template>
-                    </p-carousel>
-                  } @else {
-                    <div class="no-slides surface-border border-1 border-round-md text-sm text-500 p-3 text-center">
-                      No slide matches found
+                      </div>
+                      <div class="selected-slide-caption text-sm text-700 p-2 text-center">
+                        Selected slide
+                      </div>
                     </div>
+                  } @else {
+                    <div class="slide-mode-switch-container">
+                      <p-selectbutton class="slide-mode-switch" [options]="modeOptions" optionLabel="label" optionValue="value"
+                        [ngModel]="getViewMode(paragraph.id)" (onChange)="onModeChange(paragraph.id, $event.value)" fluid></p-selectbutton>
+                    </div>
+                    @if (getViewMode(paragraph.id) === 'suggestions') {
+                      @if (paragraph.slideCandidates.length) {
+                        <p-carousel class="slide-carousel" [value]="paragraph.slideCandidates" [numVisible]="3" [numScroll]="1"
+                          [responsiveOptions]="responsiveOptions" [showIndicators]="false"
+                          [showNavigators]="paragraph.slideCandidates.length > 3"
+                          [circular]="paragraph.slideCandidates.length > 3">
+                          <ng-template pTemplate="item" let-slideCandidate>
+                            <div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden"
+                              [ngClass]="{ 'selected-slide': slideCandidate.selected, 'with-action-bar': !slideCandidate.selected }">
+                              <img [src]="slideCandidate.slide_file" class="slide" />
+                              <div class="overlay">
+                                <div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
+                              </div>
+                              @if (!slideCandidate.selected) {
+                                <div class="slide-action-bar">
+                                  <button pButton type="button" icon="pi pi-check" label="Approve"
+                                    class="slide-action-button approve-button"
+                                    (click)="selectSlideCandidate(paragraph, slideCandidate)"></button>
+                                  <button pButton type="button" icon="pi pi-times" label="Reject"
+                                    class="slide-action-button reject-button"
+                                    (click)="rejectSlideCandidate(paragraph, slideCandidate)"></button>
+                                </div>
+                              }
+                            </div>
+                          </ng-template>
+                        </p-carousel>
+                      } @else {
+                        <div class="no-slides surface-border border-1 border-round-md text-sm text-500 p-3 text-center">
+                          No slide matches found
+                        </div>
+                      }
+                    } @else {
+                      @if (getAvailableSlidesForParagraph(paragraph); as librarySlides) {
+                        @if (librarySlides.length) {
+                          <p-carousel class="slide-carousel library-carousel" [value]="librarySlides" [numVisible]="3" [numScroll]="1"
+                            [responsiveOptions]="responsiveOptions" [showIndicators]="false"
+                            [showNavigators]="librarySlides.length > 3" [circular]="librarySlides.length > 3">
+                            <ng-template pTemplate="item" let-slideOption>
+                              <div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden library-card with-action-bar">
+                                <div class="library-slide-image">
+                                  <img [src]="slideOption.slide_file" class="slide" />
+                                  <div class="slide-action-bar library-action">
+                                    <button pButton type="button" icon="pi pi-plus" label="Insert"
+                                      class="slide-action-button insert-button"
+                                      (click)="onLibrarySlideChosen(paragraph, slideOption.slide_file)"></button>
+                                  </div>
+                                </div>
+                              </div>
+                            </ng-template>
+                          </p-carousel>
+                        } @else {
+                          <div class="no-slides surface-border border-1 border-round-md text-sm text-500 p-3 text-center">
+                            No unused slides available
+                          </div>
+                        }
+                      }
+                    }
                   }
                 </div>
                 <div class="paragraph-text border-round surface-section shadow-1">
