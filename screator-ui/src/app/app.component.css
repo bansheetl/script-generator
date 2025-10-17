@@ -136,6 +136,11 @@
     transition: transform 0.3s ease;
 }
 
+.with-action-bar {
+    width: 18rem;
+    max-width: 100%;
+}
+
 .slide {
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -146,11 +151,6 @@
 
 .library-card .slide-action-bar {
     border-top: 1px solid rgba(59, 130, 246, 0.2);
-}
-
-.selected-slide {
-    overflow: visible;
-    z-index: 1;
 }
 
 .overlay {
