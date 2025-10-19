@@ -1,5 +1,5 @@
 import { Action, createReducer, on } from '@ngrx/store';
-import { moveSlideToParagraph, redo, rejectSlideForParagraph, scriptLoaded, scriptSaved, selectSlideForParagraph, undo } from './app.actions';
+import { moveSlideToParagraph, redo, rejectSlideForParagraph, scriptLoaded, scriptSaved, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from './app.actions';
 import { Paragraph, SlideCandidate } from './app.model';
 
 export interface AppState {
@@ -26,6 +26,14 @@ function copyState(state: AppState): AppState {
         scriptEdited: state.scriptEdited,
         undoHistory: state.undoHistory,
         redoHistory: state.redoHistory
+    };
+}
+
+function cloneParagraph(paragraph: Paragraph): Paragraph {
+    return {
+        ...paragraph,
+        slideCandidates: (paragraph.slideCandidates ?? []).map((candidate) => ({ ...candidate })),
+        selectedSlides: (paragraph.selectedSlides ?? []).map((selected) => ({ ...selected }))
     };
 }
 
@@ -101,6 +109,51 @@ const _appReducer = createReducer(
             }
         })
     })),
+    on(updateParagraphText, (state, { paragraphId, newText }) => {
+        const targetParagraph = state.paragraphs.find((p) => p.id === paragraphId);
+        if (!targetParagraph || targetParagraph.text === newText) {
+            return state;
+        }
+
+        return {
+            undoHistory: [...state.undoHistory, copyState(state)],
+            redoHistory: [],
+            scriptEdited: true,
+            paragraphs: state.paragraphs.map((p) => (
+                p.id === paragraphId ? { ...cloneParagraph(p), text: newText } : cloneParagraph(p)
+            ))
+        };
+    }),
+    on(splitParagraph, (state, { paragraphId, updatedText, newParagraphText }) => {
+        const targetIndex = state.paragraphs.findIndex((p) => p.id === paragraphId);
+        if (targetIndex === -1) {
+            return state;
+        }
+
+        const paragraphsCopy = state.paragraphs.map((paragraph) => cloneParagraph(paragraph));
+        const updatedParagraph = { ...paragraphsCopy[targetIndex], text: updatedText };
+        const maxId = paragraphsCopy.reduce((acc, paragraph) => Math.max(acc, paragraph.id), 0);
+        const newParagraph: Paragraph = {
+            id: maxId + 1,
+            text: newParagraphText,
+            slideCandidates: [],
+            selectedSlides: []
+        };
+
+        const updatedParagraphs = [
+            ...paragraphsCopy.slice(0, targetIndex),
+            updatedParagraph,
+            newParagraph,
+            ...paragraphsCopy.slice(targetIndex + 1)
+        ];
+
+        return {
+            undoHistory: [...state.undoHistory, copyState(state)],
+            redoHistory: [],
+            scriptEdited: true,
+            paragraphs: updatedParagraphs
+        };
+    }),
     on(scriptLoaded, (state, { paragraphs }) => ({
         undoHistory: [],
         redoHistory: [],

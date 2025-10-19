@@ -2,10 +2,10 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Paragraph, SlideCandidate, SlideMatch, SlideMatchResult } from './app.model';
 import { AppState } from './app.reducers';
 import { Store } from '@ngrx/store';
-import { rejectSlideForParagraph, redo, scriptLoaded, scriptSaved, selectSlideForParagraph, undo } from './app.actions';
+import { rejectSlideForParagraph, redo, scriptLoaded, scriptSaved, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from './app.actions';
 import { Observable, Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
-import { selectParagraphs, selectRedoHistoryExists, selectScriptEdited, selectUndoHistoryExists } from './app.selectors';
+import { selectParagraphs, selectRedoHistoryExists, selectScriptEdited, selectUndoHistoryExists, selectUndoHistoryLength } from './app.selectors';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -42,11 +42,13 @@ export class AppComponent implements OnInit, OnDestroy {
   scriptEdited$: Observable<boolean>;
   undoHistoryExists$: Observable<boolean>;
   redoHistoryExists$: Observable<boolean>;
+  undoHistoryLength$!: Observable<number>;
   scripts: ScriptOption[] = [];
   selectedScript: string | null = null;
   allSlides: SlideOption[] = [];
   availableSlides: SlideOption[] = [];
   completionStats: CompletionStats = { total: 0, completed: 0, open: 0, percentage: 0 };
+  paragraphDrafts: Record<number, string> = {};
 
   modeOptions: ModeOption[] = [
     { label: 'Suggestions', value: 'suggestions' },
@@ -76,12 +78,17 @@ export class AppComponent implements OnInit, OnDestroy {
   private paragraphCompletionOverrides: Record<number, boolean> = {};
   private paragraphsSnapshot: Paragraph[] = [];
   private paragraphsSubscription?: Subscription;
+  private undoHistoryLengthSubscription?: Subscription;
+  private undoHistoryLength = 0;
+  private editingParagraphId: number | null = null;
+  private editUndoBaseline = 0;
 
   constructor(private store: Store<AppState>) {
     this.paragraphs$ = this.store.select(selectParagraphs);
     this.scriptEdited$ = this.store.select(selectScriptEdited);
     this.undoHistoryExists$ = this.store.select(selectUndoHistoryExists);
     this.redoHistoryExists$ = this.store.select(selectRedoHistoryExists);
+    this.undoHistoryLength$ = this.store.select(selectUndoHistoryLength);
   }
 
   ngOnInit(): void {
@@ -99,14 +106,133 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.paragraphsSubscription = this.paragraphs$.subscribe((paragraphs) => {
       this.paragraphsSnapshot = paragraphs ?? [];
+      if (this.editingParagraphId !== null) {
+        const editingParagraph = this.paragraphsSnapshot.find((p) => p.id === this.editingParagraphId);
+        if (!editingParagraph) {
+          this.exitParagraphEdit(this.editingParagraphId);
+        }
+      }
       this.cleanupParagraphState(this.paragraphsSnapshot);
       this.updateAvailableSlides();
       this.updateCompletionStats();
+    });
+
+    this.undoHistoryLengthSubscription = this.undoHistoryLength$.subscribe((length) => {
+      this.undoHistoryLength = length;
     });
   }
 
   ngOnDestroy(): void {
     this.paragraphsSubscription?.unsubscribe();
+    this.undoHistoryLengthSubscription?.unsubscribe();
+  }
+
+  isParagraphEditing(paragraph: Paragraph): boolean {
+    return this.editingParagraphId === paragraph.id;
+  }
+
+  enterParagraphEdit(paragraph: Paragraph, event?: Event): void {
+    event?.stopPropagation();
+
+    if (this.editingParagraphId !== null && this.editingParagraphId !== paragraph.id) {
+      const currentlyEditing = this.paragraphsSnapshot.find((p) => p.id === this.editingParagraphId);
+      if (currentlyEditing) {
+        this.cancelParagraphEdit(currentlyEditing);
+      } else {
+        this.exitParagraphEdit(this.editingParagraphId);
+      }
+    }
+
+    this.editingParagraphId = paragraph.id;
+    this.paragraphDrafts[paragraph.id] = paragraph.text;
+    this.editUndoBaseline = this.undoHistoryLength;
+  }
+
+  saveParagraph(paragraph: Paragraph, event?: Event): void {
+    event?.stopPropagation();
+
+    if (this.editingParagraphId !== paragraph.id) {
+      return;
+    }
+
+    const draft = this.paragraphDrafts[paragraph.id];
+    if (draft !== undefined && draft !== paragraph.text) {
+      this.store.dispatch(updateParagraphText({ paragraphId: paragraph.id, newText: draft }));
+    }
+
+    this.exitParagraphEdit(paragraph.id);
+  }
+
+  cancelParagraphEdit(paragraph: Paragraph, event?: Event): void {
+    event?.stopPropagation();
+
+    if (this.editingParagraphId !== paragraph.id) {
+      return;
+    }
+
+    const stepsToUndo = Math.max(0, this.undoHistoryLength - this.editUndoBaseline);
+    for (let i = 0; i < stepsToUndo; i++) {
+      this.store.dispatch(undo());
+    }
+
+    if (stepsToUndo > 0) {
+      this.undoHistoryLength = Math.max(0, this.undoHistoryLength - stepsToUndo);
+    }
+
+    this.exitParagraphEdit(paragraph.id);
+  }
+
+  onParagraphKeydown(event: KeyboardEvent, paragraph: Paragraph): void {
+    if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.metaKey || event.ctrlKey) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const target = event.target as HTMLTextAreaElement;
+    const currentDraft = this.paragraphDrafts[paragraph.id] ?? '';
+    const selectionStart = target.selectionStart ?? 0;
+    const selectionEnd = target.selectionEnd ?? selectionStart;
+    const before = currentDraft.slice(0, selectionStart);
+    const after = currentDraft.slice(selectionEnd);
+
+    this.paragraphDrafts[paragraph.id] = before;
+    target.value = before;
+    setTimeout(() => {
+      target.setSelectionRange(before.length, before.length);
+    }, 0);
+
+    this.store.dispatch(splitParagraph({ paragraphId: paragraph.id, updatedText: before, newParagraphText: after }));
+  }
+
+  isParagraphSaveDisabled(paragraph: Paragraph): boolean {
+    if (!this.isParagraphEditing(paragraph)) {
+      return true;
+    }
+
+    const draft = this.paragraphDrafts[paragraph.id];
+    const textChanged = draft !== undefined && draft !== paragraph.text;
+    const structuralChangesPending = this.undoHistoryLength > this.editUndoBaseline;
+
+    if (!textChanged && !structuralChangesPending) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private exitParagraphEdit(paragraphId: number): void {
+    delete this.paragraphDrafts[paragraphId];
+    if (this.editingParagraphId === paragraphId) {
+      this.editingParagraphId = null;
+    }
+    this.editUndoBaseline = this.undoHistoryLength;
+  }
+
+  private resetEditingState(): void {
+    this.editingParagraphId = null;
+    this.paragraphDrafts = {};
+    this.editUndoBaseline = this.undoHistoryLength;
   }
 
   private hasRequiredFiles(dir: string): boolean {
@@ -162,6 +288,7 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.resetEditingState();
     this.paragraphViewModes = {};
     this.paragraphSelectionVisible = {};
     this.paragraphCompletionOverrides = {};

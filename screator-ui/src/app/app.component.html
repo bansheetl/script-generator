@@ -144,13 +144,30 @@
                     }
                   }
                 </div>
-                <div class="paragraph-text border-round surface-section shadow-1">
+                <div class="paragraph-text border-round surface-section shadow-1" [class.editing]="isParagraphEditing(paragraph)">
                   @if (isParagraphCompleted(paragraph)) {
                     <i class="pi pi-check-circle paragraph-status-icon"></i>
                   }
-                  <div class="paragraph-text-body">
-                    {{ paragraph.text }}
-                  </div>
+                  @if (isParagraphEditing(paragraph)) {
+                    <div class="paragraph-edit-container">
+                      <textarea class="paragraph-edit-textarea" rows="6" [(ngModel)]="paragraphDrafts[paragraph.id]"
+                        (keydown)="onParagraphKeydown($event, paragraph)"></textarea>
+                      <div class="paragraph-edit-actions">
+                        <button pButton type="button" label="Save" icon="pi pi-check"
+                          class="p-button-sm paragraph-edit-save"
+                          [disabled]="isParagraphSaveDisabled(paragraph)"
+                          (click)="saveParagraph(paragraph, $event)"></button>
+                        <button pButton type="button" label="Cancel" icon="pi pi-times"
+                          class="p-button-sm p-button-text paragraph-edit-cancel"
+                          (click)="cancelParagraphEdit(paragraph, $event)"></button>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="paragraph-text-body paragraph-readonly" tabindex="0"
+                      (click)="enterParagraphEdit(paragraph, $event)">
+                      {{ paragraph.text }}
+                    </div>
+                  }
                 </div>
               </div>
             </div>

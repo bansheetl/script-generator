@@ -8,3 +8,5 @@ export const scriptLoaded = createAction('[Script] Loaded', props<{ paragraphs: 
 export const scriptSaved = createAction('[Script] Saved');
 export const undo = createAction('[Commands] Undo');
 export const redo = createAction('[Commands] Redo');
+export const updateParagraphText = createAction('[Paragraph] Update Text', props<{ paragraphId: number, newText: string }>());
+export const splitParagraph = createAction('[Paragraph] Split', props<{ paragraphId: number, updatedText: string, newParagraphText: string }>());

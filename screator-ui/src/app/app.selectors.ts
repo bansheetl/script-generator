@@ -8,6 +8,11 @@ export const selectUndoHistoryExists = createSelector(
     (state: AppState) => state.undoHistory.length > 0
 );
 
+export const selectUndoHistoryLength = createSelector(
+    selectAppState,
+    (state: AppState) => state.undoHistory.length
+);
+
 export const selectRedoHistoryExists = createSelector(
     selectAppState,
     (state: AppState) => state.redoHistory.length > 0
