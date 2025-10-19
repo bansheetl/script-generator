@@ -1,5 +1,5 @@
 import { Action, createReducer, on } from '@ngrx/store';
-import { moveSlideToParagraph, redo, rejectSlideForParagraph, scriptLoaded, scriptSaved, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from './app.actions';
+import { clearSlideCandidatesForParagraph, moveSlideToParagraph, redo, rejectSlideForParagraph, scriptLoaded, scriptSaved, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from './app.actions';
 import { Paragraph, SlideCandidate } from './app.model';
 
 export interface AppState {
@@ -109,6 +109,23 @@ const _appReducer = createReducer(
             }
         })
     })),
+    on(clearSlideCandidatesForParagraph, (state, { paragraphId }) => {
+        const targetParagraph = state.paragraphs.find((p) => p.id === paragraphId);
+        if (!targetParagraph || (targetParagraph.slideCandidates ?? []).length === 0) {
+            return state;
+        }
+
+        return {
+            undoHistory: [...state.undoHistory, copyState(state)],
+            redoHistory: [],
+            scriptEdited: true,
+            paragraphs: state.paragraphs.map((p) => (
+                p.id === paragraphId
+                    ? { ...cloneParagraph(p), slideCandidates: [] }
+                    : cloneParagraph(p)
+            ))
+        };
+    }),
     on(updateParagraphText, (state, { paragraphId, newText }) => {
         const targetParagraph = state.paragraphs.find((p) => p.id === paragraphId);
         if (!targetParagraph || targetParagraph.text === newText) {

@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Paragraph, SlideCandidate, SlideMatch, SlideMatchResult } from './app.model';
 import { AppState } from './app.reducers';
 import { Store } from '@ngrx/store';
-import { rejectSlideForParagraph, redo, scriptLoaded, scriptSaved, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from './app.actions';
+import { clearSlideCandidatesForParagraph, rejectSlideForParagraph, redo, scriptLoaded, scriptSaved, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from './app.actions';
 import { Observable, Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { selectParagraphs, selectRedoHistoryExists, selectScriptEdited, selectUndoHistoryExists, selectUndoHistoryLength } from './app.selectors';
@@ -376,20 +376,51 @@ export class AppComponent implements OnInit, OnDestroy {
           return;
         }
         try {
-          const editedContent = JSON.parse(data)?.content ?? [];
-          editedContent.forEach((editedParagraph: Partial<Paragraph>) => {
-            const original = paragraphs.find((p) => p.id === editedParagraph.id);
-            if (!original) {
-              return;
-            }
-            const selectedSlides = (editedParagraph.selectedSlides && editedParagraph.selectedSlides.length > 0)
-              ? editedParagraph.selectedSlides
-              : (editedParagraph.slideCandidates?.filter((candidate) => candidate.selected) ?? []);
-            if (selectedSlides.length > 0) {
-              original.selectedSlides = selectedSlides.map((slide) => ({ ...slide, selected: true }));
-              original.slideCandidates = original.slideCandidates.filter((candidate) => !selectedSlides.some((slide) => slide.slide_file === candidate.slide_file));
-            }
-          });
+          const parsed = JSON.parse(data);
+          const editedContent: Partial<Paragraph>[] = Array.isArray(parsed?.content) ? parsed.content : [];
+          if (editedContent.length > 0) {
+            const cloneCandidates = (candidates?: SlideCandidate[]) => (candidates ?? []).map((candidate) => ({ ...candidate }));
+            const ensureSelectedFlag = (slides: SlideCandidate[]) => slides.map((slide) => ({ ...slide, selected: slide.selected ?? true }));
+            const paragraphsById = new Map(paragraphs.map((paragraph) => [paragraph.id, {
+              ...paragraph,
+              slideCandidates: cloneCandidates(paragraph.slideCandidates),
+              selectedSlides: cloneCandidates(paragraph.selectedSlides)
+            }]));
+
+            const updatedParagraphs: Paragraph[] = editedContent.map((editedParagraph) => {
+              const base = editedParagraph.id !== undefined ? paragraphsById.get(editedParagraph.id) : undefined;
+              const fallbackId = base?.id ?? 0;
+              const id = typeof editedParagraph.id === 'number' ? editedParagraph.id : fallbackId;
+              const text = typeof editedParagraph.text === 'string' ? editedParagraph.text : (base?.text ?? '');
+              const slideCandidates = editedParagraph.slideCandidates !== undefined
+                ? cloneCandidates(editedParagraph.slideCandidates)
+                : cloneCandidates(base?.slideCandidates);
+              const selectedSlides = editedParagraph.selectedSlides !== undefined
+                ? ensureSelectedFlag(cloneCandidates(editedParagraph.selectedSlides))
+                : ensureSelectedFlag(cloneCandidates(base?.selectedSlides));
+
+              return {
+                id,
+                text,
+                slideCandidates,
+                selectedSlides
+              };
+            });
+
+            const editedIds = new Set(updatedParagraphs.map((paragraph) => paragraph.id));
+            paragraphs.forEach((paragraph) => {
+              if (!editedIds.has(paragraph.id)) {
+                updatedParagraphs.push({
+                  ...paragraph,
+                  slideCandidates: cloneCandidates(paragraph.slideCandidates),
+                  selectedSlides: cloneCandidates(paragraph.selectedSlides)
+                });
+              }
+            });
+
+            paragraphs.length = 0;
+            updatedParagraphs.forEach((paragraph) => paragraphs.push(paragraph));
+          }
         } catch (parseError) {
           console.error('Error parsing edited script:', parseError);
         }
@@ -507,12 +538,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   cancelSelection(paragraph: Paragraph) {
     this.paragraphSelectionVisible[paragraph.id] = false;
-    const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
-    if (hasCandidates) {
-      this.paragraphCompletionOverrides[paragraph.id] = true;
-    } else {
-      delete this.paragraphCompletionOverrides[paragraph.id];
+    if ((paragraph.slideCandidates ?? []).length > 0) {
+      this.store.dispatch(clearSlideCandidatesForParagraph({ paragraphId: paragraph.id }));
     }
+    delete this.paragraphCompletionOverrides[paragraph.id];
     this.updateCompletionStats();
   }
 
