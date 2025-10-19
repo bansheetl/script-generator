@@ -61,15 +61,12 @@ def lector_raw(repository):
     progress_bar = tqdm.tqdm(total=len(chunks), unit="chunk")
     for idx, chunk in enumerate(chunks):
         previous_context = "\n\n".join(lectored_paragraphs[-3:])
-        next_chunk = chunks[idx + 1] if idx + 1 < len(chunks) else ""
 
         user_message = ( 
             "REFERENCE_PREVIOUS:\n"
             f"{previous_context or '<none>'}\n\n"
             "CURRENT:\n"
-            f"{chunk}\n\n"
-            "REFERENCE_NEXT:\n"
-            f"{next_chunk or '<none>'}"
+            f"{chunk}"
         )
 
         current_messages = [
