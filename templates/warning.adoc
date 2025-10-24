@@ -1,0 +1,4 @@
+[WARNING]
+====
+Bei diesem Skript handelt es sich um ein mit AI generiertes Skript. Basis hierfür ist das Transkript zur Videoeinheit sowie die Folien der Präsentation. Das Skript dient als Grundlage für die Erstellung von Lernkarten und Zusammenfassungen. Es ist nicht als vollständiger Ersatz für die Videoeinheit zu verstehen. Insbesondere ist es nicht fehlerfrei und sollte in Kombination mit der Videoeinheit verwendet werden. Fehler können gerne in Teams gemeldet werden oder in GitLab behoben werden.
+====

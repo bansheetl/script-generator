@@ -4,6 +4,26 @@ import json
 import tqdm
 import subprocess
 
+
+WARNING_TEMPLATE_PATH = os.path.join(
+    os.path.dirname(__file__),
+    "templates",
+    "warning.adoc",
+)
+
+
+def load_warning_block():
+    try:
+        with open(WARNING_TEMPLATE_PATH, "r", encoding="utf-8") as warning_file:
+            warning_content = warning_file.read().strip()
+            return f"{warning_content}\n\n" if warning_content else ""
+    except FileNotFoundError:
+        tqdm.tqdm.write(
+            f"Warning template not found at {WARNING_TEMPLATE_PATH}. Proceeding without warning block."
+        )
+        return ""
+
+
 def create_asciidoc_script(json_path):
     
     with open(json_path, 'r', encoding="utf-8") as json_file:
@@ -15,6 +35,7 @@ def create_asciidoc_script(json_path):
     output_file_path = json_path.replace(".json", ".adoc")
     with open(output_file_path, 'w', encoding='utf-8') as writer:
         writer.write(":imagesdir: slides\n\n")
+        writer.write(load_warning_block())
         
         progress_bar = tqdm.tqdm(total=len(paragraphs), desc="Writing paragraphs")
         
