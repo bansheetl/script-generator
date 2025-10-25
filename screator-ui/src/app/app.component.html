@@ -124,13 +124,11 @@
                             [showNavigators]="librarySlides.length > 3" [circular]="librarySlides.length > 3">
                             <ng-template pTemplate="item" let-slideOption>
                               <div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden library-card with-action-bar">
-                                <div class="library-slide-image">
-                                  <img [src]="slideOption.slide_file" class="slide" />
-                                  <div class="slide-action-bar library-action">
-                                    <button pButton type="button" icon="pi pi-plus" label="Insert"
-                                      class="slide-action-button insert-button"
-                                      (click)="onLibrarySlideChosen(paragraph, slideOption.slide_file)"></button>
-                                  </div>
+                                <img [src]="slideOption.slide_file" class="slide" />
+                                <div class="slide-action-bar library-action">
+                                  <button pButton type="button" icon="pi pi-plus" label="Insert"
+                                    class="slide-action-button insert-button"
+                                    (click)="onLibrarySlideChosen(paragraph, slideOption.slide_file)"></button>
                                 </div>
                               </div>
                             </ng-template>
