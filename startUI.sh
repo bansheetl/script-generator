@@ -1,0 +1,1 @@
+npm --prefix screator-ui run start

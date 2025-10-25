@@ -67,13 +67,23 @@ Input assets live under `input/<id>/` with matching `.docx` and `.pdf` files. On
 
 - **Desktop review UI** – rebuild Angular assets and launch the Electron shell:
   ```sh
-  npm --prefix screator-ui run start
+  ./startUI.sh
   ```
 
 - **Generate edited AsciiDoc/PDF** – convert UI-curated edits back into AsciiDoc (and optional PDF):
   ```sh
   python script_generator_edited.py output/01
   ```
+
+- **Quick edited script generation** – simplified shell script that takes only the folder name:
+  ```sh
+  ./createEditedScript.sh 01
+  ```
+  This script automatically:
+  - Checks dependencies and provides helpful error messages
+  - Processes the `script_edited.json` in the specified output folder
+  - Generates both `.adoc` and `.pdf` files (if asciidoctor-pdf is available)
+  - Shows progress and completion status
 
 Generated artifacts are written to `output/<id>/` and include `script.json`, `slide_descriptions.json`, `slide_matches.json`, `script.adoc`, and UI exports.
 

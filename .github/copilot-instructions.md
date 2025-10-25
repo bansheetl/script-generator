@@ -19,7 +19,7 @@
 ## Electron/Angular UI (`screator-ui/`)
 - Angular 18 + NgRx store drives the desktop editor. `AppComponent` (standalone) reads `output/*/script.json` and `slide_matches.json` from disk using Node’s `fs` exposed via Electron (`nodeIntegration: true`). Any change to output file names or relative paths must update `SLIDE_PREFIX` (`../../../../../`) and `SCRIPT_ROOT_DIR` (`../output`).
 - Slide selection is managed via NgRx actions (`app.actions.ts`), reducer (`app.reducers.ts`) with manual undo/redo stacks, and selectors (`app.selectors.ts`). When adding state, copy state deeply in `copyState` so undo snapshots remain immutable.
-- Build commands: `npm install` then `npm run start` (runs `ng build --source-map` before launching Electron). Use `npm run build` for production bundles and `npm run test` for Angular unit tests.
+- Build commands: `npm install` then `npm run start` (runs `ng build --source-map` before launching Electron). Use `npm run build` for production bundles and `npm run test` for Angular unit tests. For convenience, use `./startUI.sh` to launch the UI directly.
 
 ## Python Environment
 - Install deps with `pip install -r requirements.txt`; pdf rendering needs system-level Poppler (`brew install poppler` on macOS) for `pdf2image`. Tests use built-in `unittest` (`python -m unittest discover tests`).
@@ -34,4 +34,5 @@
 ## Typical Commands
 - `python main.py input/01` – run full automation for script 01.
 - `python script_generator_edited.py output/01` – convert a manually curated script into AsciiDoc/PDF.
-- `npm --prefix screator-ui run start` – rebuild Angular app and launch Electron shell.
+- `./startUI.sh` – rebuild Angular app and launch Electron shell.
+- `npm --prefix screator-ui run start` – alternative direct command to rebuild Angular app and launch Electron shell.
