@@ -1,187 +1,64 @@
 <div class="screator-app flex flex-column h-full surface-ground">
   <p-toolbar class="screator-toolbar surface-card shadow-2">
     <div class="w-full flex align-items-center flex-wrap gap-3">
-  <div class="app-logo" aria-label="Screator logo" role="img">
-    <svg class="app-logo-svg" width="36" height="36" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="bgToolbar" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#1d4ed8"/>
-          <stop offset="50%" stop-color="#2563eb"/>
-          <stop offset="100%" stop-color="#3b82f6"/>
-        </linearGradient>
-        <linearGradient id="penToolbar" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#fbbf24"/>
-          <stop offset="100%" stop-color="#f59e0b"/>
-        </linearGradient>
-      </defs>
-      <rect width="128" height="128" rx="26" fill="url(#bgToolbar)" />
-      <path d="M36 34c0-6 5-10 10-10h46c2 0 4 2 4 4v72c0 10-8 18-18 18H54c-6 0-10-5-10-10V34Z" fill="#ffffff" fill-opacity="0.95"/>
-      <path d="M54 36h32M54 50h32M54 64h32M54 78h24" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round" />
-      <path d="M42 96l14-6 34-34c2-2 2-5 0-7-2-2-5-2-7 0L49 83l-6 13Z" fill="url(#penToolbar)" />
-      <path d="M42 96l6-12 8 8-14 4Z" fill="#92400e" opacity="0.55" />
-      <circle cx="84" cy="58" r="6" fill="#fff" fill-opacity="0.35" />
-    </svg>
-  </div>
-  <span class="app-title text-2xl font-semibold">Screator</span>
+      <div class="app-logo" aria-label="Screator logo" role="img">
+        <svg class="app-logo-svg" width="36" height="36" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bgToolbar" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#1d4ed8" />
+              <stop offset="50%" stop-color="#2563eb" />
+              <stop offset="100%" stop-color="#3b82f6" />
+            </linearGradient>
+            <linearGradient id="penToolbar" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fbbf24" />
+              <stop offset="100%" stop-color="#f59e0b" />
+            </linearGradient>
+          </defs>
+          <rect width="128" height="128" rx="26" fill="url(#bgToolbar)" />
+          <path d="M36 34c0-6 5-10 10-10h46c2 0 4 2 4 4v72c0 10-8 18-18 18H54c-6 0-10-5-10-10V34Z" fill="#ffffff" fill-opacity="0.95" />
+          <path d="M54 36h32M54 50h32M54 64h32M54 78h24" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round" />
+          <path d="M42 96l14-6 34-34c2-2 2-5 0-7-2-2-5-2-7 0L49 83l-6 13Z" fill="url(#penToolbar)" />
+          <path d="M42 96l6-12 8 8-14 4Z" fill="#92400e" opacity="0.55" />
+          <circle cx="84" cy="58" r="6" fill="#fff" fill-opacity="0.35" />
+        </svg>
+      </div>
+      <span class="app-title text-2xl font-semibold">Screator</span>
       <span class="flex-grow-1"></span>
       <div class="flex flex-column gap-1 dropdown-group">
         <span class="dropdown-label text-sm text-600">Selected script</span>
-        <p-select class="script-dropdown w-12rem" [options]="scripts" optionLabel="label" optionValue="value"
-          [(ngModel)]="selectedScript" placeholder="Choose script" (onChange)="onScriptSelected()"></p-select>
+        <p-select
+          class="script-dropdown w-12rem"
+          [options]="scripts"
+          optionLabel="label"
+          optionValue="value"
+          [(ngModel)]="selectedScript"
+          placeholder="Choose script"
+          [disabled]="isLoading"
+          (onChange)="onScriptSelected()"
+        ></p-select>
       </div>
       <div class="flex align-items-center gap-2 action-group">
-        <button pButton type="button" icon="pi pi-undo" class="p-button-rounded p-button-text"
-          [disabled]="!(undoHistoryExists$ | async)" (click)="undo()"></button>
-        <button pButton type="button" icon="pi pi-redo" class="p-button-rounded p-button-text"
-          [disabled]="!(redoHistoryExists$ | async)" (click)="redo()"></button>
-        <button pButton type="button" icon="pi pi-refresh" class="p-button-rounded p-button-text"
-          [disabled]="!(scriptEdited$ | async)" (click)="onScriptSelected()"></button>
-        <button pButton type="button" label="Save Script" icon="pi pi-save"
-          class="p-button-raised p-button-primary tb-button" [disabled]="!(scriptEdited$ | async)"
-          (click)="saveScript()"></button>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-refresh"
+          class="p-button-rounded p-button-text"
+          (click)="reloadScript()"
+          [disabled]="isLoading"
+        ></button>
+        <button
+          pButton
+          type="button"
+          label="Save Script"
+          icon="pi pi-save"
+          class="p-button-raised p-button-primary tb-button"
+          [disabled]="!(scriptEdited$ | async)"
+          (click)="saveScript()"
+        ></button>
       </div>
     </div>
   </p-toolbar>
   <div class="content-wrapper flex-1 overflow-auto">
-    @if (paragraphs$ | async; as paragraphs) {
-      <div class="paragraph-container flex flex-column gap-4">
-        @for (paragraph of paragraphs; track paragraph.id) {
-          <div class="script-paragraph relative">
-            <div class="paragraph-layout flex align-items-start">
-              <div class="paragraph-content flex flex-column gap-4">
-                <div class="slides-column">
-                  @if (getSelectedSlides(paragraph); as selectedSlides) {
-                    @if (selectedSlides.length) {
-                      <div class="selected-slides-grid">
-                        @for (selectedSlide of selectedSlides; track selectedSlide.slide_file; let selectedIndex = $index) {
-                          <div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden selected-slide-display">
-                            <div class="selected-slide-image">
-                              <img [src]="selectedSlide.slide_file" class="slide" />
-                              <div class="overlay">
-                                <div class="score-bar" [style.width.%]="selectedSlide.score * 100"></div>
-                              </div>
-                              <button pButton type="button" icon="pi pi-times" class="selected-slide-remove p-button-rounded p-button-text"
-                                (click)="removeSelectedSlide(paragraph, selectedSlide)" [attr.aria-label]="'Remove selected slide ' + (selectedIndex + 1)"></button>
-                            </div>
-                            <div class="selected-slide-caption text-sm text-700 p-2 text-center">
-                              Slide {{ selectedIndex + 1 }}
-                            </div>
-                          </div>
-                        }
-                      </div>
-                    }
-                  }
-                  @if (!isSelectionVisible(paragraph)) {
-                    <div class="paragraph-divider">
-                      <button pButton type="button" icon="pi pi-plus" class="divider-button p-button-rounded p-button-success"
-                        (click)="openSelection(paragraph)"></button>
-                      <div class="divider-line"></div>
-                    </div>
-                  }
-                  @if (isSelectionVisible(paragraph)) {
-                    <div class="selection-header">
-                      <button pButton type="button" icon="pi pi-times" label="Cancel"
-                        class="selection-cancel-button p-button-text"
-                        (click)="cancelSelection(paragraph)"></button>
-                    </div>
-                    <div class="slide-mode-switch-container">
-                      <p-selectbutton class="slide-mode-switch" [options]="modeOptions" optionLabel="label" optionValue="value"
-                        [ngModel]="getViewMode(paragraph)" (onChange)="onModeChange(paragraph.id, $event.value)" fluid></p-selectbutton>
-                    </div>
-                    @if (getViewMode(paragraph) === 'suggestions') {
-                      @if (paragraph.slideCandidates.length) {
-                        <p-carousel class="slide-carousel" [value]="paragraph.slideCandidates" [numVisible]="3" [numScroll]="1"
-                          [responsiveOptions]="responsiveOptions" [showIndicators]="false"
-                          [showNavigators]="paragraph.slideCandidates.length > 3"
-                          [circular]="paragraph.slideCandidates.length > 3">
-                          <ng-template pTemplate="item" let-slideCandidate>
-                            <div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden with-action-bar">
-                              <img [src]="slideCandidate.slide_file" class="slide" />
-                              <div class="overlay">
-                                <div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
-                              </div>
-                              <div class="slide-action-bar">
-                                <button pButton type="button" icon="pi pi-check" label="Approve"
-                                  class="slide-action-button approve-button"
-                                  (click)="selectSlideCandidate(paragraph, slideCandidate)"></button>
-                                <button pButton type="button" icon="pi pi-times" label="Reject"
-                                  class="slide-action-button reject-button"
-                                  (click)="rejectSlideCandidate(paragraph, slideCandidate)"></button>
-                              </div>
-                            </div>
-                          </ng-template>
-                        </p-carousel>
-                      } @else {
-                        <div class="no-slides surface-border border-1 border-round-md text-sm text-500 p-3 text-center">
-                          No slide matches found
-                        </div>
-                      }
-                    } @else {
-                      @if (getAvailableSlidesForParagraph(paragraph); as librarySlides) {
-                        @if (librarySlides.length) {
-                          <p-carousel class="slide-carousel library-carousel" [value]="librarySlides" [numVisible]="3" [numScroll]="1"
-                            [responsiveOptions]="responsiveOptions" [showIndicators]="false"
-                            [showNavigators]="librarySlides.length > 3" [circular]="librarySlides.length > 3">
-                            <ng-template pTemplate="item" let-slideOption>
-                              <div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden library-card with-action-bar">
-                                <img [src]="slideOption.slide_file" class="slide" />
-                                <div class="slide-action-bar library-action">
-                                  <button pButton type="button" icon="pi pi-plus" label="Insert"
-                                    class="slide-action-button insert-button"
-                                    (click)="onLibrarySlideChosen(paragraph, slideOption.slide_file)"></button>
-                                </div>
-                              </div>
-                            </ng-template>
-                          </p-carousel>
-                        } @else {
-                          <div class="no-slides surface-border border-1 border-round-md text-sm text-500 p-3 text-center">
-                            No unused slides available
-                          </div>
-                        }
-                      }
-                    }
-                  }
-                </div>
-                <div class="paragraph-text border-round surface-section shadow-1" [class.editing]="isParagraphEditing(paragraph)">
-                  @if (isParagraphCompleted(paragraph)) {
-                    <i class="pi pi-check-circle paragraph-status-icon"></i>
-                  }
-                  @if (isParagraphEditing(paragraph)) {
-                    <div class="paragraph-edit-container">
-                      <textarea class="paragraph-edit-textarea" rows="6" [(ngModel)]="paragraphDrafts[paragraph.id]"
-                        (keydown)="onParagraphKeydown($event, paragraph)"></textarea>
-                      <div class="paragraph-edit-actions">
-                        <button pButton type="button" label="Save" icon="pi pi-check"
-                          class="p-button-sm paragraph-edit-save"
-                          [disabled]="isParagraphSaveDisabled(paragraph)"
-                          (click)="saveParagraph(paragraph, $event)"></button>
-                        <button pButton type="button" label="Cancel" icon="pi pi-times"
-                          class="p-button-sm p-button-text paragraph-edit-cancel"
-                          (click)="cancelParagraphEdit(paragraph, $event)"></button>
-                      </div>
-                    </div>
-                  } @else {
-                    <div class="paragraph-text-body paragraph-readonly" tabindex="0"
-                      (click)="enterParagraphEdit(paragraph, $event)">
-                      {{ paragraph.text }}
-                    </div>
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-    }
+    <app-script-editor [allSlides]="allSlides"></app-script-editor>
   </div>
-  @if (completionStats.total > 0) {
-    <div class="paragraph-progress-overlay shadow-3">
-      <div class="progress-track">
-        <div class="progress-fill" [style.width.%]="completionStats.percentage"></div>
-      </div>
-      <span class="progress-label text-sm">
-        {{ completionStats.completed }} / {{ completionStats.total }} completed · {{ completionStats.open }} open
-      </span>
-    </div>
-  }
 </div>

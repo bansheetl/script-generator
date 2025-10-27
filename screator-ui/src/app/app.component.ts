@@ -1,627 +1,282 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Paragraph, SlideCandidate, SlideMatch, SlideMatchResult } from './app.model';
-import { AppState } from './app.reducers';
-import { Store } from '@ngrx/store';
-import { clearSlideCandidatesForParagraph, rejectSlideForParagraph, redo, scriptLoaded, scriptSaved, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from './app.actions';
-import { Observable, Subscription } from 'rxjs';
-import { take } from 'rxjs/operators';
-import { selectParagraphs, selectRedoHistoryExists, selectScriptEdited, selectUndoHistoryExists, selectUndoHistoryLength } from './app.selectors';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToolbarModule } from 'primeng/toolbar';
 import { SelectModule } from 'primeng/select';
-import { SelectButtonModule } from 'primeng/selectbutton';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { CarouselModule } from 'primeng/carousel';
+import { Store } from '@ngrx/store';
+import { Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
+import { Paragraph, Slide, SlideCandidate, SlideMatch, SlideMatchResult } from './app.model';
+import { AppState } from './app.reducers';
+import { scriptDataLoaded, scriptSaved, scriptSelected } from './app.actions';
+import { selectParagraphs, selectScriptEdited } from './app.selectors';
+import { ScriptEditorComponent } from './components/script-editor/script-editor.component';
 
 declare var fs: any;
 declare var path: any;
 
 @Component({
-    selector: 'app-script-editor',
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.css'],
+  selector: 'app-root',
+  standalone: true,
   imports: [
     CommonModule,
     FormsModule,
     ToolbarModule,
     SelectModule,
-    SelectButtonModule,
     ButtonModule,
-    CardModule,
-    CarouselModule,
-  ]
+    ScriptEditorComponent
+  ],
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit {
+  private static readonly SLIDE_PREFIX = '../../../../../';
+  private static readonly SCRIPT_ROOT_DIR = '../output';
 
-  static readonly SLIDE_PREFIX = '../../../../../';
-  static readonly SCRIPT_ROOT_DIR = '../output';
-
-  paragraphs$: Observable<Paragraph[]>;
-  scriptEdited$: Observable<boolean>;
-  undoHistoryExists$: Observable<boolean>;
-  redoHistoryExists$: Observable<boolean>;
-  undoHistoryLength$!: Observable<number>;
   scripts: ScriptOption[] = [];
   selectedScript: string | null = null;
-  allSlides: SlideOption[] = [];
-  availableSlides: SlideOption[] = [];
-  completionStats: CompletionStats = { total: 0, completed: 0, open: 0, percentage: 0 };
-  paragraphDrafts: Record<number, string> = {};
+  allSlides: Slide[] = [];
+  isLoading = false;
 
-  modeOptions: ModeOption[] = [
-    { label: 'Suggestions', value: 'suggestions' },
-    { label: 'Slide library', value: 'library' }
-  ];
-
-  responsiveOptions = [
-    {
-      breakpoint: '1200px',
-      numVisible: 3,
-      numScroll: 1
-    },
-    {
-      breakpoint: '992px',
-      numVisible: 2,
-      numScroll: 1
-    },
-    {
-      breakpoint: '768px',
-      numVisible: 1,
-      numScroll: 1
-    }
-  ];
-
-  private paragraphViewModes: Record<number, SlideSelectionMode> = {};
-  private paragraphSelectionVisible: Record<number, boolean> = {};
-  private paragraphCompletionOverrides: Record<number, boolean> = {};
-  private paragraphsSnapshot: Paragraph[] = [];
-  private paragraphsSubscription?: Subscription;
-  private undoHistoryLengthSubscription?: Subscription;
-  private undoHistoryLength = 0;
-  private editingParagraphId: number | null = null;
-  private editUndoBaseline = 0;
+  readonly paragraphs$: Observable<Paragraph[]>;
+  readonly scriptEdited$: Observable<boolean>;
 
   constructor(private store: Store<AppState>) {
     this.paragraphs$ = this.store.select(selectParagraphs);
     this.scriptEdited$ = this.store.select(selectScriptEdited);
-    this.undoHistoryExists$ = this.store.select(selectUndoHistoryExists);
-    this.redoHistoryExists$ = this.store.select(selectRedoHistoryExists);
-    this.undoHistoryLength$ = this.store.select(selectUndoHistoryLength);
   }
 
   ngOnInit(): void {
-    const script_dirs = fs.readdirSync(AppComponent.SCRIPT_ROOT_DIR);
-    script_dirs.forEach((script_dir: string) => {
-      if (script_dir !== '.DS_Store' && this.hasRequiredFiles(AppComponent.SCRIPT_ROOT_DIR + '/' + script_dir)) {
-        this.scripts.push({ label: script_dir, value: script_dir });
-      }
-    });
-    console.log("Scripts loaded: ", this.scripts.map(script => script.value));
-    if (this.scripts.length > 0) {
-      this.selectedScript = this.scripts[0].value;
-      this.onScriptSelected();
-    }
-
-    this.paragraphsSubscription = this.paragraphs$.subscribe((paragraphs) => {
-      this.paragraphsSnapshot = paragraphs ?? [];
-      if (this.editingParagraphId !== null) {
-        const editingParagraph = this.paragraphsSnapshot.find((p) => p.id === this.editingParagraphId);
-        if (!editingParagraph) {
-          this.exitParagraphEdit(this.editingParagraphId);
-        }
-      }
-      this.cleanupParagraphState(this.paragraphsSnapshot);
-      this.updateAvailableSlides();
-      this.updateCompletionStats();
-    });
-
-    this.undoHistoryLengthSubscription = this.undoHistoryLength$.subscribe((length) => {
-      this.undoHistoryLength = length;
-    });
+    this.loadScripts();
   }
 
-  ngOnDestroy(): void {
-    this.paragraphsSubscription?.unsubscribe();
-    this.undoHistoryLengthSubscription?.unsubscribe();
-  }
-
-  isParagraphEditing(paragraph: Paragraph): boolean {
-    return this.editingParagraphId === paragraph.id;
-  }
-
-  enterParagraphEdit(paragraph: Paragraph, event?: Event): void {
-    event?.stopPropagation();
-
-    if (this.editingParagraphId !== null && this.editingParagraphId !== paragraph.id) {
-      const currentlyEditing = this.paragraphsSnapshot.find((p) => p.id === this.editingParagraphId);
-      if (currentlyEditing) {
-        this.cancelParagraphEdit(currentlyEditing);
-      } else {
-        this.exitParagraphEdit(this.editingParagraphId);
-      }
-    }
-
-    this.editingParagraphId = paragraph.id;
-    this.paragraphDrafts[paragraph.id] = paragraph.text;
-    this.editUndoBaseline = this.undoHistoryLength;
-  }
-
-  saveParagraph(paragraph: Paragraph, event?: Event): void {
-    event?.stopPropagation();
-
-    if (this.editingParagraphId !== paragraph.id) {
+  async onScriptSelected(): Promise<void> {
+    if (!this.selectedScript) {
       return;
     }
 
-    const draft = this.paragraphDrafts[paragraph.id];
-    if (draft !== undefined && draft !== paragraph.text) {
-      this.store.dispatch(updateParagraphText({ paragraphId: paragraph.id, newText: draft }));
+    const scriptId = this.selectedScript;
+    const baseDir = `${AppComponent.SCRIPT_ROOT_DIR}/${scriptId}`;
+
+    this.store.dispatch(scriptSelected({ scriptId }));
+    this.allSlides = [];
+    this.isLoading = true;
+
+    try {
+      const scriptData = await this.readFileAsync(`${baseDir}/script.json`);
+      const paragraphs = this.retrieveParagraphs(scriptData);
+
+      const slideMatchesData = await this.readFileAsync(`${baseDir}/slide_matches.json`);
+      const slideLibrary = this.attachSlidesToParagraphs(slideMatchesData, paragraphs);
+
+      await this.loadEditedSelections(baseDir, paragraphs);
+
+      if (this.selectedScript !== scriptId) {
+        return;
+      }
+
+      this.allSlides = slideLibrary;
+      this.store.dispatch(scriptDataLoaded({ scriptId, paragraphs }));
+    } catch (error) {
+      console.error(`Error loading script \"${scriptId}\":`, error);
+    } finally {
+      if (this.selectedScript === scriptId) {
+        this.isLoading = false;
+      }
     }
-
-    this.exitParagraphEdit(paragraph.id);
   }
 
-  cancelParagraphEdit(paragraph: Paragraph, event?: Event): void {
-    event?.stopPropagation();
-
-    if (this.editingParagraphId !== paragraph.id) {
-      return;
-    }
-
-    const stepsToUndo = Math.max(0, this.undoHistoryLength - this.editUndoBaseline);
-    for (let i = 0; i < stepsToUndo; i++) {
-      this.store.dispatch(undo());
-    }
-
-    if (stepsToUndo > 0) {
-      this.undoHistoryLength = Math.max(0, this.undoHistoryLength - stepsToUndo);
-    }
-
-    this.exitParagraphEdit(paragraph.id);
-  }
-
-  onParagraphKeydown(event: KeyboardEvent, paragraph: Paragraph): void {
-    if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.metaKey || event.ctrlKey) {
-      return;
-    }
-
-    event.preventDefault();
-
-    const target = event.target as HTMLTextAreaElement;
-    const currentDraft = this.paragraphDrafts[paragraph.id] ?? '';
-    const selectionStart = target.selectionStart ?? 0;
-    const selectionEnd = target.selectionEnd ?? selectionStart;
-    const before = currentDraft.slice(0, selectionStart);
-    const after = currentDraft.slice(selectionEnd);
-
-    this.paragraphDrafts[paragraph.id] = before;
-    target.value = before;
-    setTimeout(() => {
-      target.setSelectionRange(before.length, before.length);
-    }, 0);
-
-    this.store.dispatch(splitParagraph({ paragraphId: paragraph.id, updatedText: before, newParagraphText: after }));
-  }
-
-  isParagraphSaveDisabled(paragraph: Paragraph): boolean {
-    if (!this.isParagraphEditing(paragraph)) {
-      return true;
-    }
-
-    const draft = this.paragraphDrafts[paragraph.id];
-    const textChanged = draft !== undefined && draft !== paragraph.text;
-    const structuralChangesPending = this.undoHistoryLength > this.editUndoBaseline;
-
-    if (!textChanged && !structuralChangesPending) {
-      return true;
-    }
-
-    return false;
-  }
-
-  private exitParagraphEdit(paragraphId: number): void {
-    delete this.paragraphDrafts[paragraphId];
-    if (this.editingParagraphId === paragraphId) {
-      this.editingParagraphId = null;
-    }
-    this.editUndoBaseline = this.undoHistoryLength;
-  }
-
-  private resetEditingState(): void {
-    this.editingParagraphId = null;
-    this.paragraphDrafts = {};
-    this.editUndoBaseline = this.undoHistoryLength;
-  }
-
-  private hasRequiredFiles(dir: string): boolean {
-    return fs.existsSync(dir + '/script.json') && fs.existsSync(dir + '/slide_matches.json');
-  }
-
-  undo() {
-    this.store.dispatch(undo());
-  }
-
-  redo() {
-    this.store.dispatch(redo());
-  }
-
-  saveScript() {
+  saveScript(): void {
     if (!this.selectedScript) {
       return;
     }
 
     this.paragraphs$.pipe(take(1)).subscribe((paragraphs) => {
-      const script = {
-        content: paragraphs
-      };
-      fs.writeFile(AppComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript + '/script_edited.json', JSON.stringify(script), (err: any) => {
+      const script = { content: paragraphs };
+      const outputPath = `${AppComponent.SCRIPT_ROOT_DIR}/${this.selectedScript}/script_edited.json`;
+
+      fs.writeFile(outputPath, JSON.stringify(script), (err: any) => {
         if (err) {
           console.error('Error saving script:', err);
         }
       });
     });
+
     this.store.dispatch(scriptSaved());
   }
 
-  selectSlideCandidate(paragraph: Paragraph, selectedSlide: SlideCandidate) {
-    this.paragraphViewModes[paragraph.id] = 'suggestions';
-    this.paragraphSelectionVisible[paragraph.id] = false;
-    delete this.paragraphCompletionOverrides[paragraph.id];
-    this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate: selectedSlide }));
-    this.updateCompletionStats();
+  reloadScript(): void {
+    void this.onScriptSelected();
   }
 
-  rejectSlideCandidate(paragraph: Paragraph, slideToReject: SlideCandidate) {
-    const remainingCandidates = paragraph.slideCandidates.filter((candidate) => candidate.slide_file !== slideToReject.slide_file);
-    if (remainingCandidates.length === 0 && this.getSelectedSlides(paragraph).length === 0) {
-      this.paragraphSelectionVisible[paragraph.id] = false;
-      delete this.paragraphCompletionOverrides[paragraph.id];
+  private loadScripts(): void {
+    const scriptDirs: string[] = fs.readdirSync(AppComponent.SCRIPT_ROOT_DIR);
+    this.scripts = scriptDirs
+      .filter((dir) => dir !== '.DS_Store' && this.hasRequiredFiles(`${AppComponent.SCRIPT_ROOT_DIR}/${dir}`))
+      .map((dir) => ({ label: dir, value: dir }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    if (this.scripts.length > 0) {
+      this.selectedScript = this.scripts[0].value;
+      void this.onScriptSelected();
     }
-    this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate: slideToReject }));
-    this.updateCompletionStats();
   }
 
-  onScriptSelected(): void {
-    if (!this.selectedScript) {
-      return;
-    }
+  private hasRequiredFiles(dir: string): boolean {
+    return fs.existsSync(`${dir}/script.json`) && fs.existsSync(`${dir}/slide_matches.json`);
+  }
 
-    this.resetEditingState();
-    this.paragraphViewModes = {};
-    this.paragraphSelectionVisible = {};
-    this.paragraphCompletionOverrides = {};
-    this.allSlides = [];
-    this.availableSlides = [];
-    this.paragraphsSnapshot = [];
-    this.updateCompletionStats();
-
-    const baseDir = AppComponent.SCRIPT_ROOT_DIR + '/' + this.selectedScript;
-
-    fs.readFile(baseDir + '/script.json', 'utf8', (err: any, data: any) => {
-      if (err) {
-        console.error('Error reading script:', err);
-        return;
-      }
-      const paragraphs = this.retrieveParagraphs(data);
-      fs.readFile(baseDir + '/slide_matches.json', 'utf8', (err: any, data: any) => {
+  private async readFileAsync(filePath: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      fs.readFile(filePath, 'utf8', (err: any, data: any) => {
         if (err) {
-          console.error('Error reading slide matches:', err);
-          return;
+          reject(err);
+        } else {
+          resolve(data);
         }
-        this.addSlidesToParagraphs(data, paragraphs);
-        this.loadEditedSelections(baseDir, paragraphs);
       });
     });
   }
 
   private retrieveParagraphs(result: string): Paragraph[] {
     try {
-      const paragraphs: Paragraph[] = [];
       const jsonContent = JSON.parse(result as string);
-      jsonContent.content.forEach((paragraph_entry: any) => {
+      const paragraphs: Paragraph[] = [];
+
+      jsonContent.content.forEach((entry: any) => {
         const paragraphData: Paragraph = {
-          ...paragraph_entry,
+          ...entry,
           slideCandidates: [],
-          selectedSlides: paragraph_entry.selectedSlides ?? []
+          selectedSlides: entry.selectedSlides ?? []
         };
         paragraphs.push(paragraphData);
       });
-      console.log("Paragraphs loaded", paragraphs);
+
       return paragraphs;
     } catch (error) {
-      console.error('Error parsing JSON:', error);
+      console.error('Error parsing script.json:', error);
       return [];
     }
   }
 
-  private addSlidesToParagraphs(result: string | ArrayBuffer | null, paragraphs: Paragraph[]) {
-    const jsonContent = JSON.parse(result as string);
-    console.log("Slides loaded", jsonContent)
-    this.allSlides = [];
-    jsonContent.forEach((slideMatch: SlideMatch) => {
-      const slidePath = AppComponent.SLIDE_PREFIX + slideMatch.slide_file;
-      const slide: Slide = {
-        slide_name: path.basename(slideMatch.slide_file),
-        slide_file: slidePath
-      };
-      this.allSlides.push(slide);
-      slideMatch.results.forEach((match: SlideMatchResult) => {
-        const paragraph = paragraphs[parseInt(match.paragraph_id) - 1];
-        if (paragraph) {
-          const slideCandidate = {
+  private attachSlidesToParagraphs(result: string, paragraphs: Paragraph[]): Slide[] {
+    try {
+      const jsonContent = JSON.parse(result as string);
+      const slides: Slide[] = [];
+
+      jsonContent.forEach((slideMatch: SlideMatch) => {
+        const slidePath = AppComponent.SLIDE_PREFIX + slideMatch.slide_file;
+        const slide: Slide = {
+          slide_name: path.basename(slideMatch.slide_file),
+          slide_file: slidePath
+        };
+
+        slides.push(slide);
+
+        slideMatch.results.forEach((match: SlideMatchResult) => {
+          const paragraphIndex = parseInt(match.paragraph_id, 10) - 1;
+          const paragraph = paragraphs[paragraphIndex];
+
+          if (!paragraph) {
+            return;
+          }
+
+          const slideCandidate: SlideCandidate = {
             slide_file: slidePath,
             score: match.score,
             selected: false
           };
-          const alreadySelected = paragraph.selectedSlides.some((selectedSlide) => selectedSlide.slide_file === slideCandidate.slide_file);
+
+          const alreadySelected = (paragraph.selectedSlides ?? []).some(
+            (selectedSlide) => selectedSlide.slide_file === slideCandidate.slide_file
+          );
+
           if (!alreadySelected) {
             paragraph.slideCandidates.push(slideCandidate);
           }
-        }
+        });
       });
-    });
-    this.updateAvailableSlides();
+
+      return slides;
+    } catch (error) {
+      console.error('Error parsing slide_matches.json:', error);
+      return [];
+    }
   }
 
-  private loadEditedSelections(baseDir: string, paragraphs: Paragraph[]) {
-    const editedPath = baseDir + '/script_edited.json';
-    if (fs.existsSync(editedPath)) {
-      fs.readFile(editedPath, 'utf8', (err: any, data: any) => {
-        if (err) {
-          console.error('Error reading edited script:', err);
-          this.initializeSelectionState(paragraphs);
-          this.store.dispatch(scriptLoaded({ paragraphs }));
-          return;
-        }
-        try {
-          const parsed = JSON.parse(data);
-          const editedContent: Partial<Paragraph>[] = Array.isArray(parsed?.content) ? parsed.content : [];
-          if (editedContent.length > 0) {
-            const cloneCandidates = (candidates?: SlideCandidate[]) => (candidates ?? []).map((candidate) => ({ ...candidate }));
-            const ensureSelectedFlag = (slides: SlideCandidate[]) => slides.map((slide) => ({ ...slide, selected: slide.selected ?? true }));
-            const paragraphsById = new Map(paragraphs.map((paragraph) => [paragraph.id, {
-              ...paragraph,
-              slideCandidates: cloneCandidates(paragraph.slideCandidates),
-              selectedSlides: cloneCandidates(paragraph.selectedSlides)
-            }]));
+  private async loadEditedSelections(baseDir: string, paragraphs: Paragraph[]): Promise<void> {
+    const editedPath = `${baseDir}/script_edited.json`;
+    if (!fs.existsSync(editedPath)) {
+      return;
+    }
 
-            const updatedParagraphs: Paragraph[] = editedContent.map((editedParagraph) => {
-              const base = editedParagraph.id !== undefined ? paragraphsById.get(editedParagraph.id) : undefined;
-              const fallbackId = base?.id ?? 0;
-              const id = typeof editedParagraph.id === 'number' ? editedParagraph.id : fallbackId;
-              const text = typeof editedParagraph.text === 'string' ? editedParagraph.text : (base?.text ?? '');
-              const slideCandidates = editedParagraph.slideCandidates !== undefined
-                ? cloneCandidates(editedParagraph.slideCandidates)
-                : cloneCandidates(base?.slideCandidates);
-              const selectedSlides = editedParagraph.selectedSlides !== undefined
-                ? ensureSelectedFlag(cloneCandidates(editedParagraph.selectedSlides))
-                : ensureSelectedFlag(cloneCandidates(base?.selectedSlides));
+    try {
+      const data = await this.readFileAsync(editedPath);
+      const parsed = JSON.parse(data);
+      const editedContent: Partial<Paragraph>[] = Array.isArray(parsed?.content) ? parsed.content : [];
 
-              return {
-                id,
-                text,
-                slideCandidates,
-                selectedSlides
-              };
-            });
+      if (editedContent.length === 0) {
+        return;
+      }
 
-            const editedIds = new Set(updatedParagraphs.map((paragraph) => paragraph.id));
-            paragraphs.forEach((paragraph) => {
-              if (!editedIds.has(paragraph.id)) {
-                updatedParagraphs.push({
-                  ...paragraph,
-                  slideCandidates: cloneCandidates(paragraph.slideCandidates),
-                  selectedSlides: cloneCandidates(paragraph.selectedSlides)
-                });
-              }
-            });
+      const cloneCandidates = (candidates?: SlideCandidate[]) =>
+        (candidates ?? []).map((candidate) => ({ ...candidate }));
+      const ensureSelectedFlag = (slides: SlideCandidate[]) =>
+        slides.map((slide) => ({ ...slide, selected: slide.selected ?? true }));
 
-            paragraphs.length = 0;
-            updatedParagraphs.forEach((paragraph) => paragraphs.push(paragraph));
+      const paragraphsById = new Map(
+        paragraphs.map((paragraph) => [
+          paragraph.id,
+          {
+            ...paragraph,
+            slideCandidates: cloneCandidates(paragraph.slideCandidates),
+            selectedSlides: cloneCandidates(paragraph.selectedSlides)
           }
-        } catch (parseError) {
-          console.error('Error parsing edited script:', parseError);
+        ])
+      );
+
+      const updatedParagraphs: Paragraph[] = editedContent.map((editedParagraph) => {
+        const base = editedParagraph.id !== undefined ? paragraphsById.get(editedParagraph.id) : undefined;
+        const fallbackId = base?.id ?? 0;
+        const id = typeof editedParagraph.id === 'number' ? editedParagraph.id : fallbackId;
+        const text = typeof editedParagraph.text === 'string' ? editedParagraph.text : (base?.text ?? '');
+        const slideCandidates = Array.isArray(editedParagraph.slideCandidates)
+          ? cloneCandidates(editedParagraph.slideCandidates as SlideCandidate[])
+          : cloneCandidates(base?.slideCandidates);
+        const selectedSlides = Array.isArray(editedParagraph.selectedSlides)
+          ? ensureSelectedFlag(cloneCandidates(editedParagraph.selectedSlides as SlideCandidate[]))
+          : ensureSelectedFlag(cloneCandidates(base?.selectedSlides));
+
+        return {
+          id,
+          text,
+          slideCandidates,
+          selectedSlides
+        };
+      });
+
+      const editedIds = new Set(updatedParagraphs.map((paragraph) => paragraph.id));
+
+      paragraphs.forEach((paragraph) => {
+        if (!editedIds.has(paragraph.id)) {
+          updatedParagraphs.push({
+            ...paragraph,
+            slideCandidates: cloneCandidates(paragraph.slideCandidates),
+            selectedSlides: cloneCandidates(paragraph.selectedSlides)
+          });
         }
-        this.initializeSelectionState(paragraphs);
-        this.store.dispatch(scriptLoaded({ paragraphs }));
       });
-    } else {
-      this.initializeSelectionState(paragraphs);
-      this.store.dispatch(scriptLoaded({ paragraphs }));
+
+      paragraphs.length = 0;
+      updatedParagraphs.forEach((paragraph) => paragraphs.push(paragraph));
+    } catch (error) {
+      console.error('Error parsing script_edited.json:', error);
     }
   }
-
-  getViewMode(paragraph: Paragraph): SlideSelectionMode {
-    if (!this.paragraphViewModes[paragraph.id]) {
-      const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
-      this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
-    }
-    return this.paragraphViewModes[paragraph.id];
-  }
-
-  onModeChange(paragraphId: number, mode: SlideSelectionMode) {
-    this.paragraphViewModes[paragraphId] = mode;
-  }
-
-  openSelection(paragraph: Paragraph) {
-    const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
-    this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
-    this.paragraphSelectionVisible[paragraph.id] = true;
-    delete this.paragraphCompletionOverrides[paragraph.id];
-    this.updateCompletionStats();
-  }
-
-  getAvailableSlidesForParagraph(_paragraph: Paragraph): SlideOption[] {
-    return this.availableSlides
-      .map((slide) => ({ ...slide }))
-      .sort((a, b) => a.slide_name.localeCompare(b.slide_name));
-  }
-
-  onLibrarySlideChosen(paragraph: Paragraph, slideFile: string | null) {
-    if (!slideFile) {
-      return;
-    }
-
-    const slide = this.findSlideByFile(slideFile);
-    if (!slide) {
-      return;
-    }
-
-    const slideCandidate: SlideCandidate = this.createCandidateFromSlide(slide);
-    this.paragraphViewModes[paragraph.id] = 'library';
-    this.paragraphSelectionVisible[paragraph.id] = false;
-    delete this.paragraphCompletionOverrides[paragraph.id];
-    this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate }));
-    this.updateCompletionStats();
-  }
-
-  private updateAvailableSlides(): void {
-    const assigned = new Set<string>();
-    this.paragraphsSnapshot.forEach((paragraph) => {
-      paragraph.selectedSlides?.forEach((selected) => {
-        assigned.add(selected.slide_file);
-      });
-    });
-
-    this.availableSlides = this.allSlides
-      .filter((slide) => !assigned.has(slide.slide_file))
-      .map((slide) => ({ ...slide }));
-  }
-
-  getSelectedSlides(paragraph: Paragraph): SlideCandidate[] {
-    return paragraph.selectedSlides ?? [];
-  }
-
-  isSelectionVisible(paragraph: Paragraph): boolean {
-    return this.paragraphSelectionVisible[paragraph.id] ?? false;
-  }
-
-  findSlideByFile(slideFile: string): SlideOption | undefined {
-    return this.allSlides.find((slide) => slide.slide_file === slideFile);
-  }
-
-  private createCandidateFromSlide(slide: Slide): SlideCandidate {
-    return {
-      slide_file: slide.slide_file,
-      score: 0,
-      selected: false
-    };
-  }
-
-  removeSelectedSlide(paragraph: Paragraph, slideCandidate: SlideCandidate) {
-    const remainingSelected = (paragraph.selectedSlides ?? []).filter((selected) => selected.slide_file !== slideCandidate.slide_file);
-    if (remainingSelected.length === 0) {
-      const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
-      this.paragraphSelectionVisible[paragraph.id] = hasCandidates;
-      delete this.paragraphCompletionOverrides[paragraph.id];
-    } else {
-      this.paragraphSelectionVisible[paragraph.id] = false;
-      delete this.paragraphCompletionOverrides[paragraph.id];
-    }
-    this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate }));
-    this.updateCompletionStats();
-  }
-
-  private initializeSelectionState(paragraphs: Paragraph[]): void {
-    this.paragraphSelectionVisible = {};
-    paragraphs.forEach((paragraph) => {
-      const hasSelected = (paragraph.selectedSlides ?? []).length > 0;
-      const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
-      delete this.paragraphCompletionOverrides[paragraph.id];
-      this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
-      this.paragraphSelectionVisible[paragraph.id] = hasSelected ? false : hasCandidates;
-    });
-    this.updateCompletionStats();
-  }
-
-  cancelSelection(paragraph: Paragraph) {
-    this.paragraphSelectionVisible[paragraph.id] = false;
-    if ((paragraph.slideCandidates ?? []).length > 0) {
-      this.store.dispatch(clearSlideCandidatesForParagraph({ paragraphId: paragraph.id }));
-    }
-    delete this.paragraphCompletionOverrides[paragraph.id];
-    this.updateCompletionStats();
-  }
-
-  isParagraphCompleted(paragraph: Paragraph): boolean {
-    if (this.isSelectionVisible(paragraph)) {
-      return false;
-    }
-
-    if (this.getSelectedSlides(paragraph).length > 0) {
-      return true;
-    }
-
-    if ((paragraph.slideCandidates ?? []).length === 0) {
-      return true;
-    }
-
-    return this.paragraphCompletionOverrides[paragraph.id] ?? false;
-  }
-
-  private updateCompletionStats(): void {
-    const total = this.paragraphsSnapshot.length;
-    const completed = this.paragraphsSnapshot.reduce((count, paragraph) => (
-      this.isParagraphCompleted(paragraph) ? count + 1 : count
-    ), 0);
-    const open = total - completed;
-    const percentage = total > 0 ? (completed / total) * 100 : 0;
-    this.completionStats = { total, completed, open, percentage };
-  }
-
-  private cleanupParagraphState(paragraphs: Paragraph[]): void {
-    const validIds = new Set(paragraphs.map((paragraph) => paragraph.id));
-
-    Object.keys(this.paragraphCompletionOverrides).forEach((key) => {
-      const id = Number(key);
-      if (!validIds.has(id)) {
-        delete this.paragraphCompletionOverrides[id];
-      }
-    });
-
-    Object.keys(this.paragraphSelectionVisible).forEach((key) => {
-      const id = Number(key);
-      if (!validIds.has(id)) {
-        delete this.paragraphSelectionVisible[id];
-      }
-    });
-
-    Object.keys(this.paragraphViewModes).forEach((key) => {
-      const id = Number(key);
-      if (!validIds.has(id)) {
-        delete this.paragraphViewModes[id];
-      }
-    });
-  }
-
-}
-
-interface Slide {
-  slide_name: string;
-  slide_file: string;
 }
 
 interface ScriptOption {
   label: string;
   value: string;
-}
-
-interface SlideOption extends Slide {
-  disabled?: boolean;
-}
-
-type SlideSelectionMode = 'suggestions' | 'library';
-
-interface ModeOption {
-  label: string;
-  value: SlideSelectionMode;
-}
-
-interface CompletionStats {
-  total: number;
-  completed: number;
-  open: number;
-  percentage: number;
 }

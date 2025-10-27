@@ -1,0 +1,241 @@
+<div class="script-editor flex flex-column gap-4">
+	<div class="editor-controls flex align-items-center justify-content-end gap-2">
+		<button
+			pButton
+			type="button"
+			icon="pi pi-undo"
+			class="p-button-rounded p-button-text"
+			[disabled]="!(undoHistoryExists$ | async)"
+			(click)="undo()"
+		></button>
+		<button
+			pButton
+			type="button"
+			icon="pi pi-redo"
+			class="p-button-rounded p-button-text"
+			[disabled]="!(redoHistoryExists$ | async)"
+			(click)="redo()"
+		></button>
+	</div>
+
+	<div class="editor-body">
+		@if (paragraphs$ | async; as paragraphs) {
+			@if (paragraphs.length > 0) {
+				<div class="paragraph-container flex flex-column gap-4">
+					@for (paragraph of paragraphs; track trackParagraph($index, paragraph)) {
+						<div class="script-paragraph relative">
+							<div class="paragraph-layout flex align-items-start">
+								<div class="paragraph-content flex flex-column gap-4">
+									<div class="slides-column">
+										@if (getSelectedSlides(paragraph); as selectedSlides) {
+											@if (selectedSlides.length) {
+												<div class="selected-slides-grid">
+													@for (selectedSlide of selectedSlides; track selectedSlide.slide_file; let selectedIndex = $index) {
+														<div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden selected-slide-display">
+															<div class="selected-slide-image">
+																<img [src]="selectedSlide.slide_file" class="slide" />
+																<div class="overlay">
+																	<div class="score-bar" [style.width.%]="selectedSlide.score * 100"></div>
+																</div>
+																<button
+																	pButton
+																	type="button"
+																	icon="pi pi-times"
+																	class="selected-slide-remove p-button-rounded p-button-text"
+																	(click)="removeSelectedSlide(paragraph, selectedSlide)"
+																	[attr.aria-label]="'Remove selected slide ' + (selectedIndex + 1)"
+																></button>
+															</div>
+															<div class="selected-slide-caption text-sm text-700 p-2 text-center">
+																Slide {{ selectedIndex + 1 }}
+															</div>
+														</div>
+													}
+												</div>
+											}
+										}
+
+										@if (!isSelectionVisible(paragraph)) {
+											<div class="paragraph-divider">
+												<button
+													pButton
+													type="button"
+													icon="pi pi-plus"
+													class="divider-button p-button-rounded p-button-success"
+													(click)="openSelection(paragraph)"
+												></button>
+												<div class="divider-line"></div>
+											</div>
+										}
+
+										@if (isSelectionVisible(paragraph)) {
+											<div class="selection-header">
+												<button
+													pButton
+													type="button"
+													icon="pi pi-times"
+													label="Cancel"
+													class="selection-cancel-button p-button-text"
+													(click)="cancelSelection(paragraph)"
+												></button>
+											</div>
+											<div class="slide-mode-switch-container">
+												<p-selectbutton
+													class="slide-mode-switch"
+													[options]="modeOptions"
+													optionLabel="label"
+													optionValue="value"
+													[ngModel]="getViewMode(paragraph)"
+													(onChange)="onModeChange(paragraph.id, $event.value)"
+													fluid
+												></p-selectbutton>
+											</div>
+											@if (getViewMode(paragraph) === 'suggestions') {
+												@if (paragraph.slideCandidates.length) {
+													<p-carousel
+														class="slide-carousel"
+														[value]="paragraph.slideCandidates"
+														[numVisible]="3"
+														[numScroll]="1"
+														[responsiveOptions]="responsiveOptions"
+														[showIndicators]="false"
+														[showNavigators]="paragraph.slideCandidates.length > 3"
+														[circular]="paragraph.slideCandidates.length > 3"
+													>
+														<ng-template pTemplate="item" let-slideCandidate>
+															<div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden with-action-bar">
+																<img [src]="slideCandidate.slide_file" class="slide" />
+																<div class="overlay">
+																	<div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
+																</div>
+																<div class="slide-action-bar">
+																	<button
+																		pButton
+																		type="button"
+																		icon="pi pi-check"
+																		label="Approve"
+																		class="slide-action-button approve-button"
+																		(click)="selectSlideCandidate(paragraph, slideCandidate)"
+																	></button>
+																	<button
+																		pButton
+																		type="button"
+																		icon="pi pi-times"
+																		label="Reject"
+																		class="slide-action-button reject-button"
+																		(click)="rejectSlideCandidate(paragraph, slideCandidate)"
+																	></button>
+																</div>
+															</div>
+														</ng-template>
+													</p-carousel>
+												} @else {
+													<div class="no-slides surface-border border-1 border-round-md text-sm text-500 p-3 text-center">
+														No slide matches found
+													</div>
+												}
+											} @else {
+												@if (getAvailableSlidesForParagraph(); as librarySlides) {
+													@if (librarySlides.length) {
+														<p-carousel
+															class="slide-carousel library-carousel"
+															[value]="librarySlides"
+															[numVisible]="3"
+															[numScroll]="1"
+															[responsiveOptions]="responsiveOptions"
+															[showIndicators]="false"
+															[showNavigators]="librarySlides.length > 3"
+															[circular]="librarySlides.length > 3"
+														>
+															<ng-template pTemplate="item" let-slideOption>
+																<div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden library-card with-action-bar">
+																	<img [src]="slideOption.slide_file" class="slide" />
+																	<div class="slide-action-bar library-action">
+																		<button
+																			pButton
+																			type="button"
+																			icon="pi pi-plus"
+																			label="Insert"
+																			class="slide-action-button insert-button"
+																			(click)="onLibrarySlideChosen(paragraph, slideOption.slide_file)"
+																		></button>
+																	</div>
+																</div>
+															</ng-template>
+														</p-carousel>
+													} @else {
+														<div class="no-slides surface-border border-1 border-round-md text-sm text-500 p-3 text-center">
+															No unused slides available
+														</div>
+													}
+												}
+											}
+										}
+									</div>
+
+									<div class="paragraph-text border-round surface-section shadow-1" [class.editing]="isParagraphEditing(paragraph)">
+										@if (isParagraphCompleted(paragraph)) {
+											<i class="pi pi-check-circle paragraph-status-icon"></i>
+										}
+										@if (isParagraphEditing(paragraph)) {
+											<div class="paragraph-edit-container">
+												<textarea
+													class="paragraph-edit-textarea"
+													rows="6"
+													[(ngModel)]="paragraphDrafts[paragraph.id]"
+													(keydown)="onParagraphKeydown($event, paragraph)"
+												></textarea>
+												<div class="paragraph-edit-actions">
+													<button
+														pButton
+														type="button"
+														label="Save"
+														icon="pi pi-check"
+														class="p-button-sm paragraph-edit-save"
+														[disabled]="isParagraphSaveDisabled(paragraph)"
+														(click)="saveParagraph(paragraph, $event)"
+													></button>
+													<button
+														pButton
+														type="button"
+														label="Cancel"
+														icon="pi pi-times"
+														class="p-button-sm p-button-text paragraph-edit-cancel"
+														(click)="cancelParagraphEdit(paragraph, $event)"
+													></button>
+												</div>
+											</div>
+										} @else {
+											<div
+												class="paragraph-text-body paragraph-readonly"
+												tabindex="0"
+												(click)="enterParagraphEdit(paragraph, $event)"
+											>
+												{{ paragraph.text }}
+											</div>
+										}
+									</div>
+								</div>
+							</div>
+						</div>
+					}
+				</div>
+			} @else {
+				<div class="empty-state surface-border border-1 border-dashed border-round-md p-5 text-center text-600">
+					Select a script to start editing.
+				</div>
+			}
+		}
+	</div>
+
+	@if (completionStats.total > 0) {
+		<div class="paragraph-progress-overlay shadow-3">
+			<div class="progress-track">
+				<div class="progress-fill" [style.width.%]="completionStats.percentage"></div>
+			</div>
+			<span class="progress-label text-sm">
+				{{ completionStats.completed }} / {{ completionStats.total }} completed · {{ completionStats.open }} open
+			</span>
+		</div>
+	}
+</div>

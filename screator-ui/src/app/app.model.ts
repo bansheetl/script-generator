@@ -12,6 +12,11 @@ export interface SlideCandidate {
     selected: boolean;
 }
 
+export interface Slide {
+    slide_name: string;
+    slide_file: string;
+}
+
 export interface SlideMatch {
     slide_file: string;
     results: SlideMatchResult[];

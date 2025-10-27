@@ -1,8 +1,9 @@
 import { Action, createReducer, on } from '@ngrx/store';
-import { clearSlideCandidatesForParagraph, moveSlideToParagraph, redo, rejectSlideForParagraph, scriptLoaded, scriptSaved, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from './app.actions';
+import { clearSlideCandidatesForParagraph, moveSlideToParagraph, redo, rejectSlideForParagraph, scriptDataLoaded, scriptSaved, scriptSelected, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from './app.actions';
 import { Paragraph, SlideCandidate } from './app.model';
 
 export interface AppState {
+    currentScriptId: string | null;
     paragraphs: Paragraph[];
     scriptEdited: boolean;
     undoHistory: AppState[];
@@ -10,6 +11,7 @@ export interface AppState {
 }
 
 export const initialState: AppState = {
+    currentScriptId: null,
     paragraphs: [],
     scriptEdited: false,
     undoHistory: [],
@@ -18,14 +20,15 @@ export const initialState: AppState = {
 
 function copyState(state: AppState): AppState {
     return {
+        currentScriptId: state.currentScriptId,
         paragraphs: state.paragraphs.map((p) => ({
             ...p,
             slideCandidates: p.slideCandidates.map((sc) => ({ ...sc })),
             selectedSlides: (p.selectedSlides ?? []).map((sc) => ({ ...sc }))
         })),
         scriptEdited: state.scriptEdited,
-        undoHistory: state.undoHistory,
-        redoHistory: state.redoHistory
+        undoHistory: [],
+        redoHistory: []
     };
 }
 
@@ -39,7 +42,29 @@ function cloneParagraph(paragraph: Paragraph): Paragraph {
 
 const _appReducer = createReducer(
     initialState,
+    on(scriptSelected, (_state, { scriptId }) => ({
+        ...initialState,
+        currentScriptId: scriptId
+    })),
+    on(scriptDataLoaded, (state, { scriptId, paragraphs }) => {
+        if (state.currentScriptId !== scriptId) {
+            return state;
+        }
+
+        return {
+            currentScriptId: scriptId,
+            undoHistory: [],
+            redoHistory: [],
+            scriptEdited: false,
+            paragraphs: paragraphs.map((paragraph) => ({
+                ...paragraph,
+                slideCandidates: paragraph.slideCandidates ?? [],
+                selectedSlides: paragraph.selectedSlides ?? []
+            }))
+        };
+    }),
     on(selectSlideForParagraph, (state, { paragraph, slideCandidate }) => ({
+        currentScriptId: state.currentScriptId,
         undoHistory: [...state.undoHistory, copyState(state)],
         redoHistory: [],
         scriptEdited: true,
@@ -67,6 +92,7 @@ const _appReducer = createReducer(
         })
     })),
     on(rejectSlideForParagraph, (state, { paragraph, slideCandidate }) => ({
+        currentScriptId: state.currentScriptId,
         undoHistory: [...state.undoHistory, copyState(state)],
         redoHistory: [],
         scriptEdited: true,
@@ -83,6 +109,7 @@ const _appReducer = createReducer(
         })
     })),
     on(moveSlideToParagraph, (state, { slideCandidate, paragraph }) => ({
+        currentScriptId: state.currentScriptId,
         undoHistory: [...state.undoHistory, copyState(state)],
         redoHistory: [],
         scriptEdited: true,
@@ -116,6 +143,7 @@ const _appReducer = createReducer(
         }
 
         return {
+            currentScriptId: state.currentScriptId,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
@@ -133,6 +161,7 @@ const _appReducer = createReducer(
         }
 
         return {
+            currentScriptId: state.currentScriptId,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
@@ -165,26 +194,18 @@ const _appReducer = createReducer(
         ];
 
         return {
+        currentScriptId: state.currentScriptId,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
             paragraphs: updatedParagraphs
         };
     }),
-    on(scriptLoaded, (state, { paragraphs }) => ({
-        undoHistory: [],
-        redoHistory: [],
-        scriptEdited: false,
-        paragraphs: paragraphs.map((paragraph) => ({
-            ...paragraph,
-            slideCandidates: paragraph.slideCandidates ?? [],
-            selectedSlides: paragraph.selectedSlides ?? []
-        }))
-    })),
     on(undo, (state) => {
         if (state.undoHistory.length > 0) {
             const lastState = state.undoHistory[state.undoHistory.length - 1];
             return {
+                currentScriptId: state.currentScriptId,
                 undoHistory: state.undoHistory.slice(0, state.undoHistory.length - 1),
                 redoHistory: [...state.redoHistory, copyState(state)],
                 scriptEdited: true,
@@ -198,6 +219,7 @@ const _appReducer = createReducer(
         if (state.redoHistory.length > 0) {
             const lastState = state.redoHistory[state.redoHistory.length - 1];
             return {
+                currentScriptId: state.currentScriptId,
                 undoHistory: [...state.undoHistory, copyState(state)],
                 redoHistory: state.redoHistory.slice(0, state.redoHistory.length - 1),
                 scriptEdited: true,
