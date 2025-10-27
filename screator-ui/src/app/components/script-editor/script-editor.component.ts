@@ -8,7 +8,8 @@ import { CarouselModule } from 'primeng/carousel';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { Observable, Subscription } from 'rxjs';
 import { clearSlideCandidatesForParagraph, rejectSlideForParagraph, redo, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from '../../app.actions';
-import { Paragraph, Slide, SlideCandidate } from '../../app.model';
+import { Paragraph, SlideCandidate } from '../../app.model';
+import { Slide } from '../../slide.model';
 import { AppState } from '../../app.reducers';
 import { selectParagraphs, selectRedoHistoryExists, selectUndoHistoryExists, selectUndoHistoryLength } from '../../app.selectors';
 
@@ -419,11 +420,7 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 	}
 
 	private createCandidateFromSlide(slide: Slide): SlideCandidate {
-		return {
-			slide_file: slide.slide_file,
-			score: 0,
-			selected: false
-		};
+		return new SlideCandidate(slide.slide_file, 0, false);
 	}
 }
 

@@ -21,11 +21,7 @@ export const initialState: AppState = {
 function copyState(state: AppState): AppState {
     return {
         currentScriptId: state.currentScriptId,
-        paragraphs: state.paragraphs.map((p) => ({
-            ...p,
-            slideCandidates: p.slideCandidates.map((sc) => ({ ...sc })),
-            selectedSlides: (p.selectedSlides ?? []).map((sc) => ({ ...sc }))
-        })),
+        paragraphs: state.paragraphs.map((paragraph) => Paragraph.fromJson(paragraph)),
         scriptEdited: state.scriptEdited,
         undoHistory: [],
         redoHistory: []
@@ -33,11 +29,7 @@ function copyState(state: AppState): AppState {
 }
 
 function cloneParagraph(paragraph: Paragraph): Paragraph {
-    return {
-        ...paragraph,
-        slideCandidates: (paragraph.slideCandidates ?? []).map((candidate) => ({ ...candidate })),
-        selectedSlides: (paragraph.selectedSlides ?? []).map((selected) => ({ ...selected }))
-    };
+    return Paragraph.fromJson(paragraph);
 }
 
 const _appReducer = createReducer(
@@ -56,19 +48,11 @@ const _appReducer = createReducer(
             undoHistory: [],
             redoHistory: [],
             scriptEdited: false,
-            paragraphs: paragraphs.map((paragraph) => ({
-                ...paragraph,
-                slideCandidates: paragraph.slideCandidates ?? [],
-                selectedSlides: paragraph.selectedSlides ?? []
-            }))
+            paragraphs: paragraphs.map((paragraph) => Paragraph.fromJson(paragraph))
         };
     }),
-    on(selectSlideForParagraph, (state, { paragraph, slideCandidate }) => ({
-        currentScriptId: state.currentScriptId,
-        undoHistory: [...state.undoHistory, copyState(state)],
-        redoHistory: [],
-        scriptEdited: true,
-        paragraphs: state.paragraphs.map((p) => {
+    on(selectSlideForParagraph, (state, { paragraph, slideCandidate }) => {
+        const updatedParagraphs = state.paragraphs.map((p) => {
             if (p.id === paragraph.id) {
                 const currentCandidates = p.slideCandidates ?? [];
                 const currentSelected = p.selectedSlides ?? [];
@@ -89,14 +73,18 @@ const _appReducer = createReducer(
                     selectedSlides: (p.selectedSlides ?? []).filter((sc) => sc.slide_file !== slideCandidate.slide_file)
                 };
             }
-        })
-    })),
-    on(rejectSlideForParagraph, (state, { paragraph, slideCandidate }) => ({
-        currentScriptId: state.currentScriptId,
-        undoHistory: [...state.undoHistory, copyState(state)],
-        redoHistory: [],
-        scriptEdited: true,
-        paragraphs: state.paragraphs.map((p) => {
+        });
+
+        return {
+            currentScriptId: state.currentScriptId,
+            undoHistory: [...state.undoHistory, copyState(state)],
+            redoHistory: [],
+            scriptEdited: true,
+            paragraphs: updatedParagraphs.map((item) => Paragraph.fromJson(item))
+        };
+    }),
+    on(rejectSlideForParagraph, (state, { paragraph, slideCandidate }) => {
+        const updatedParagraphs = state.paragraphs.map((p) => {
             if (p.id === paragraph.id) {
                 return {
                     ...p,
@@ -106,14 +94,18 @@ const _appReducer = createReducer(
             } else {
                 return p;
             }
-        })
-    })),
-    on(moveSlideToParagraph, (state, { slideCandidate, paragraph }) => ({
-        currentScriptId: state.currentScriptId,
-        undoHistory: [...state.undoHistory, copyState(state)],
-        redoHistory: [],
-        scriptEdited: true,
-        paragraphs: state.paragraphs.map((p) => {
+        });
+
+        return {
+            currentScriptId: state.currentScriptId,
+            undoHistory: [...state.undoHistory, copyState(state)],
+            redoHistory: [],
+            scriptEdited: true,
+            paragraphs: updatedParagraphs.map((item) => Paragraph.fromJson(item))
+        };
+    }),
+    on(moveSlideToParagraph, (state, { slideCandidate, paragraph }) => {
+        const updatedParagraphs = state.paragraphs.map((p) => {
             if (p.id === paragraph.id) {
                 const currentCandidates = p.slideCandidates ?? [];
                 const currentSelected = p.selectedSlides ?? [];
@@ -134,24 +126,34 @@ const _appReducer = createReducer(
                     selectedSlides: (p.selectedSlides ?? []).filter((sc) => sc.slide_file !== slideCandidate.slide_file)
                 };
             }
-        })
-    })),
-    on(clearSlideCandidatesForParagraph, (state, { paragraphId }) => {
-        const targetParagraph = state.paragraphs.find((p) => p.id === paragraphId);
-        if (!targetParagraph || (targetParagraph.slideCandidates ?? []).length === 0) {
-            return state;
-        }
+        });
 
         return {
             currentScriptId: state.currentScriptId,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
-            paragraphs: state.paragraphs.map((p) => (
-                p.id === paragraphId
-                    ? { ...cloneParagraph(p), slideCandidates: [] }
-                    : cloneParagraph(p)
-            ))
+            paragraphs: updatedParagraphs.map((item) => Paragraph.fromJson(item))
+        };
+    }),
+    on(clearSlideCandidatesForParagraph, (state, { paragraphId }) => {
+        const targetParagraph = state.paragraphs.find((p) => p.id === paragraphId);
+        if (!targetParagraph || (targetParagraph.slideCandidates ?? []).length === 0) {
+            return state;
+        }
+
+        const updatedParagraphs = state.paragraphs.map((p) => (
+            p.id === paragraphId
+                ? { ...cloneParagraph(p), slideCandidates: [] }
+                : cloneParagraph(p)
+        ));
+
+        return {
+            currentScriptId: state.currentScriptId,
+            undoHistory: [...state.undoHistory, copyState(state)],
+            redoHistory: [],
+            scriptEdited: true,
+            paragraphs: updatedParagraphs.map((item) => Paragraph.fromJson(item))
         };
     }),
     on(updateParagraphText, (state, { paragraphId, newText }) => {
@@ -160,14 +162,16 @@ const _appReducer = createReducer(
             return state;
         }
 
+        const updatedParagraphs = state.paragraphs.map((p) => (
+            p.id === paragraphId ? { ...cloneParagraph(p), text: newText } : cloneParagraph(p)
+        ));
+
         return {
             currentScriptId: state.currentScriptId,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
-            paragraphs: state.paragraphs.map((p) => (
-                p.id === paragraphId ? { ...cloneParagraph(p), text: newText } : cloneParagraph(p)
-            ))
+            paragraphs: updatedParagraphs.map((item) => Paragraph.fromJson(item))
         };
     }),
     on(splitParagraph, (state, { paragraphId, updatedText, newParagraphText }) => {
@@ -179,12 +183,7 @@ const _appReducer = createReducer(
         const paragraphsCopy = state.paragraphs.map((paragraph) => cloneParagraph(paragraph));
         const updatedParagraph = { ...paragraphsCopy[targetIndex], text: updatedText };
         const maxId = paragraphsCopy.reduce((acc, paragraph) => Math.max(acc, paragraph.id), 0);
-        const newParagraph: Paragraph = {
-            id: maxId + 1,
-            text: newParagraphText,
-            slideCandidates: [],
-            selectedSlides: []
-        };
+        const newParagraph = new Paragraph(maxId + 1, newParagraphText, [], []);
 
         const updatedParagraphs = [
             ...paragraphsCopy.slice(0, targetIndex),
@@ -194,11 +193,11 @@ const _appReducer = createReducer(
         ];
 
         return {
-        currentScriptId: state.currentScriptId,
+            currentScriptId: state.currentScriptId,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
-            paragraphs: updatedParagraphs
+            paragraphs: updatedParagraphs.map((item) => Paragraph.fromJson(item))
         };
     }),
     on(undo, (state) => {
@@ -209,7 +208,7 @@ const _appReducer = createReducer(
                 undoHistory: state.undoHistory.slice(0, state.undoHistory.length - 1),
                 redoHistory: [...state.redoHistory, copyState(state)],
                 scriptEdited: true,
-                paragraphs: lastState.paragraphs
+                paragraphs: lastState.paragraphs.map((paragraph) => Paragraph.fromJson(paragraph))
             };
         } else {
             return state;
@@ -223,7 +222,7 @@ const _appReducer = createReducer(
                 undoHistory: [...state.undoHistory, copyState(state)],
                 redoHistory: state.redoHistory.slice(0, state.redoHistory.length - 1),
                 scriptEdited: true,
-                paragraphs: lastState.paragraphs
+                paragraphs: lastState.paragraphs.map((paragraph) => Paragraph.fromJson(paragraph))
             };
         } else {
             return state;
