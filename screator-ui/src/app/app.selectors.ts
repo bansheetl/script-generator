@@ -27,3 +27,19 @@ export const selectScriptEdited = createSelector(
     selectAppState,
     (state: AppState) => state.scriptEdited
 );
+
+export const selectAllSlides = createSelector(
+    selectAppState,
+    (state: AppState) => state.allSlides
+);
+
+export const selectAvailableSlides = createSelector(
+    selectAppState,
+    (state: AppState) => {
+        const assigned = new Set<string>();
+        state.paragraphs.forEach((paragraph) => {
+            (paragraph.selectedSlides ?? []).forEach((selected) => assigned.add(selected.slide_file));
+        });
+        return state.allSlides.filter((slide) => !assigned.has(slide.slide_file));
+    }
+);

@@ -10,7 +10,7 @@ import { take } from 'rxjs/operators';
 import { Paragraph, ScriptDocument } from './app.model';
 import { Slide } from './slide.model';
 import { AppState } from './app.reducers';
-import { scriptDataLoaded, scriptSaved, scriptSelected } from './app.actions';
+import { scriptDataLoaded, scriptSaved, scriptSelected, slidesLoaded } from './app.actions';
 import { selectParagraphs, selectScriptEdited } from './app.selectors';
 import { ScriptEditorComponent } from './components/script-editor/script-editor.component';
 import { SCRIPT_ROOT_DIR } from './script.constants';
@@ -35,7 +35,6 @@ declare var fs: any;
 export class AppComponent implements OnInit {
   scripts: ScriptOption[] = [];
   selectedScript: string | null = null;
-  allSlides: Slide[] = [];
   isLoading = false;
 
   readonly paragraphs$: Observable<Paragraph[]>;
@@ -62,7 +61,6 @@ export class AppComponent implements OnInit {
     const baseDir = `${SCRIPT_ROOT_DIR}/${scriptId}`;
 
     this.store.dispatch(scriptSelected({ scriptId }));
-    this.allSlides = [];
     this.isLoading = true;
 
     try {
@@ -83,7 +81,7 @@ export class AppComponent implements OnInit {
         return;
       }
 
-      this.allSlides = slides;
+      this.store.dispatch(slidesLoaded({ slides }));
       this.store.dispatch(scriptDataLoaded({ scriptId, paragraphs: document.cloneContent() }));
     } catch (error) {
       console.error(`Error loading script \"${scriptId}\":`, error);

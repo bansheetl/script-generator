@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { ButtonModule } from 'primeng/button';
@@ -11,7 +11,7 @@ import { clearSlideCandidatesForParagraph, rejectSlideForParagraph, redo, select
 import { Paragraph, SlideCandidate } from '../../app.model';
 import { Slide } from '../../slide.model';
 import { AppState } from '../../app.reducers';
-import { selectParagraphs, selectRedoHistoryExists, selectUndoHistoryExists, selectUndoHistoryLength } from '../../app.selectors';
+import { selectAvailableSlides, selectParagraphs, selectRedoHistoryExists, selectUndoHistoryExists, selectUndoHistoryLength } from '../../app.selectors';
 
 @Component({
 	selector: 'app-script-editor',
@@ -28,17 +28,8 @@ import { selectParagraphs, selectRedoHistoryExists, selectUndoHistoryExists, sel
 	styleUrls: ['./script-editor.component.css']
 })
 export class ScriptEditorComponent implements OnInit, OnDestroy {
-	@Input()
-	set allSlides(value: Slide[] | null) {
-		this.slideLibrary = (value ?? []).map((slide) => ({ ...slide }));
-		this.updateAvailableSlides();
-	}
-
-	get allSlides(): Slide[] {
-		return this.slideLibrary;
-	}
-
 	paragraphs$: Observable<Paragraph[]>;
+	availableSlides$: Observable<Slide[]>;
 	undoHistoryExists$: Observable<boolean>;
 	redoHistoryExists$: Observable<boolean>;
 
@@ -69,11 +60,11 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 	availableSlides: SlideOption[] = [];
 	paragraphDrafts: Record<number, string> = {};
 
-	private slideLibrary: Slide[] = [];
 	private paragraphViewModes: Record<number, SlideSelectionMode> = {};
 	private paragraphSelectionVisible: Record<number, boolean> = {};
 	private paragraphsSnapshot: Paragraph[] = [];
 	private paragraphsSubscription?: Subscription;
+	private availableSlidesSubscription?: Subscription;
 	private undoHistoryLengthSubscription?: Subscription;
 	private undoHistoryLength = 0;
 	private editingParagraphId: number | null = null;
@@ -81,6 +72,7 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 
 	constructor(private store: Store<AppState>) {
 		this.paragraphs$ = this.store.select(selectParagraphs);
+		this.availableSlides$ = this.store.select(selectAvailableSlides);
 		this.undoHistoryExists$ = this.store.select(selectUndoHistoryExists);
 		this.redoHistoryExists$ = this.store.select(selectRedoHistoryExists);
 	}
@@ -109,8 +101,11 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 				this.initializeSelectionState(normalized);
 			}
 
-			this.updateAvailableSlides();
 			this.updateCompletionStats();
+		});
+
+		this.availableSlidesSubscription = this.availableSlides$.subscribe((slides) => {
+			this.availableSlides = slides.map((slide) => ({ ...slide }));
 		});
 
 		this.undoHistoryLengthSubscription = this.store.select(selectUndoHistoryLength).subscribe((length) => {
@@ -120,6 +115,7 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 
 	ngOnDestroy(): void {
 		this.paragraphsSubscription?.unsubscribe();
+		this.availableSlidesSubscription?.unsubscribe();
 		this.undoHistoryLengthSubscription?.unsubscribe();
 	}
 
@@ -225,7 +221,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 		this.paragraphViewModes[paragraph.id] = 'suggestions';
 		this.paragraphSelectionVisible[paragraph.id] = false;
 		this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate: selectedSlide }));
-		this.updateAvailableSlides();
 		this.updateCompletionStats();
 	}
 
@@ -235,7 +230,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 			this.paragraphSelectionVisible[paragraph.id] = false;
 		}
 		this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate: slideToReject }));
-		this.updateAvailableSlides();
 		this.updateCompletionStats();
 	}
 
@@ -286,7 +280,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 		this.paragraphViewModes[paragraph.id] = 'library';
 		this.paragraphSelectionVisible[paragraph.id] = false;
 		this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate }));
-		this.updateAvailableSlides();
 		this.updateCompletionStats();
 	}
 
@@ -299,7 +292,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 			this.paragraphSelectionVisible[paragraph.id] = false;
 		}
 		this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate }));
-		this.updateAvailableSlides();
 		this.updateCompletionStats();
 	}
 
@@ -373,22 +365,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	private updateAvailableSlides(): void {
-		if (!this.slideLibrary) {
-			this.availableSlides = [];
-			return;
-		}
-
-		const assigned = new Set<string>();
-		this.paragraphsSnapshot.forEach((paragraph) => {
-			(paragraph.selectedSlides ?? []).forEach((selected) => assigned.add(selected.slide_file));
-		});
-
-		this.availableSlides = this.slideLibrary
-			.filter((slide) => !assigned.has(slide.slide_file))
-			.map((slide) => ({ ...slide }));
-	}
-
 	private updateCompletionStats(): void {
 		const total = this.paragraphsSnapshot.length;
 		const completed = this.paragraphsSnapshot.reduce((count, paragraph) => (
@@ -400,7 +376,7 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 	}
 
 	private findSlideByFile(slideFile: string): Slide | undefined {
-		return this.slideLibrary.find((slide) => slide.slide_file === slideFile);
+		return this.availableSlides.find((slide) => slide.slide_file === slideFile);
 	}
 
 	private createCandidateFromSlide(slide: Slide): SlideCandidate {
