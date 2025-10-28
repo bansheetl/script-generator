@@ -6,7 +6,8 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CarouselModule } from 'primeng/carousel';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { Observable, Subscription } from 'rxjs';
+import { Observable, Subscription, firstValueFrom } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { clearSlideCandidatesForParagraph, rejectSlideForParagraph, redo, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from '../../app.actions';
 import { Paragraph, SlideCandidate } from '../../app.model';
 import { Slide } from '../../slide.model';
@@ -57,14 +58,12 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 	];
 
 	completionStats: CompletionStats = { total: 0, completed: 0, open: 0, percentage: 0 };
-	availableSlides: SlideOption[] = [];
 	paragraphDrafts: Record<number, string> = {};
 
 	private paragraphViewModes: Record<number, SlideSelectionMode> = {};
 	private paragraphSelectionVisible: Record<number, boolean> = {};
 	private paragraphsSnapshot: Paragraph[] = [];
 	private paragraphsSubscription?: Subscription;
-	private availableSlidesSubscription?: Subscription;
 	private undoHistoryLengthSubscription?: Subscription;
 	private undoHistoryLength = 0;
 	private editingParagraphId: number | null = null;
@@ -104,10 +103,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 			this.updateCompletionStats();
 		});
 
-		this.availableSlidesSubscription = this.availableSlides$.subscribe((slides) => {
-			this.availableSlides = slides.map((slide) => ({ ...slide }));
-		});
-
 		this.undoHistoryLengthSubscription = this.store.select(selectUndoHistoryLength).subscribe((length) => {
 			this.undoHistoryLength = length;
 		});
@@ -115,7 +110,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 
 	ngOnDestroy(): void {
 		this.paragraphsSubscription?.unsubscribe();
-		this.availableSlidesSubscription?.unsubscribe();
 		this.undoHistoryLengthSubscription?.unsubscribe();
 	}
 
@@ -260,18 +254,21 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 		return this.paragraphViewModes[paragraph.id];
 	}
 
-	getAvailableSlidesForParagraph(): SlideOption[] {
-		return this.availableSlides
-			.map((slide) => ({ ...slide }))
-			.sort((a, b) => a.slide_name.localeCompare(b.slide_name));
+	getAvailableSlidesForParagraph(): Observable<SlideOption[]> {
+		return this.availableSlides$.pipe(
+			map((slides) => slides
+				.map((slide) => ({ ...slide }))
+				.sort((a, b) => a.slide_name.localeCompare(b.slide_name))
+			)
+		);
 	}
 
-	onLibrarySlideChosen(paragraph: Paragraph, slideFile: string | null): void {
+	async onLibrarySlideChosen(paragraph: Paragraph, slideFile: string | null): Promise<void> {
 		if (!slideFile) {
 			return;
 		}
 
-		const slide = this.findSlideByFile(slideFile);
+		const slide = await this.findSlideByFile(slideFile);
 		if (!slide) {
 			return;
 		}
@@ -375,8 +372,9 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 		this.completionStats = { total, completed, open, percentage };
 	}
 
-	private findSlideByFile(slideFile: string): Slide | undefined {
-		return this.availableSlides.find((slide) => slide.slide_file === slideFile);
+	private async findSlideByFile(slideFile: string): Promise<Slide | undefined> {
+		const slides = await firstValueFrom(this.availableSlides$);
+		return slides.find((slide) => slide.slide_file === slideFile);
 	}
 
 	private createCandidateFromSlide(slide: Slide): SlideCandidate {

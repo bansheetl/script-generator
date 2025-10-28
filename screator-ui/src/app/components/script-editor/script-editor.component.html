@@ -135,7 +135,7 @@
 													</div>
 												}
 											} @else {
-												@if (getAvailableSlidesForParagraph(); as librarySlides) {
+												@if (getAvailableSlidesForParagraph() | async; as librarySlides) {
 													@if (librarySlides.length) {
 														<p-carousel
 															class="slide-carousel library-carousel"

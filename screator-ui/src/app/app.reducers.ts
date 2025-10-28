@@ -1,5 +1,5 @@
 import { Action, createReducer, on } from '@ngrx/store';
-import { clearSlideCandidatesForParagraph, moveSlideToParagraph, redo, rejectSlideForParagraph, scriptDataLoaded, scriptSaved, scriptSelected, selectSlideForParagraph, slidesLoaded, splitParagraph, undo, updateParagraphText } from './app.actions';
+import { clearSlideCandidatesForParagraph, redo, rejectSlideForParagraph, scriptDataLoaded, scriptSaved, scriptSelected, selectSlideForParagraph, slidesLoaded, splitParagraph, undo, updateParagraphText } from './app.actions';
 import { Paragraph, SlideCandidate } from './app.model';
 import { Slide } from './slide.model';
 
@@ -103,39 +103,6 @@ const _appReducer = createReducer(
                 };
             } else {
                 return p;
-            }
-        });
-
-        return {
-            currentScriptId: state.currentScriptId,
-            allSlides: state.allSlides,
-            undoHistory: [...state.undoHistory, copyState(state)],
-            redoHistory: [],
-            scriptEdited: true,
-            paragraphs: updatedParagraphs.map((item) => Paragraph.fromJson(item))
-        };
-    }),
-    on(moveSlideToParagraph, (state, { slideCandidate, paragraph }) => {
-        const updatedParagraphs = state.paragraphs.map((p) => {
-            if (p.id === paragraph.id) {
-                const currentCandidates = p.slideCandidates ?? [];
-                const currentSelected = p.selectedSlides ?? [];
-                const existingSelection = currentSelected.some((sc) => sc.slide_file === slideCandidate.slide_file);
-                const updatedSelected = existingSelection
-                    ? currentSelected.map((sc) => sc.slide_file === slideCandidate.slide_file ? { ...sc, selected: true } : { ...sc })
-                    : [...currentSelected.map((sc) => ({ ...sc })), { ...slideCandidate, selected: true }];
-                return {
-                    ...p,
-                    slideCandidates: currentCandidates.filter((sc) => sc.slide_file !== slideCandidate.slide_file),
-                    selectedSlides: updatedSelected
-                };
-            } else {
-                const currentCandidates = p.slideCandidates ?? [];
-                return {
-                    ...p,
-                    slideCandidates: currentCandidates.filter((sc) => sc.slide_file !== slideCandidate.slide_file),
-                    selectedSlides: (p.selectedSlides ?? []).filter((sc) => sc.slide_file !== slideCandidate.slide_file)
-                };
             }
         });
 
