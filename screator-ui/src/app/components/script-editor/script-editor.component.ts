@@ -72,7 +72,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 	private slideLibrary: Slide[] = [];
 	private paragraphViewModes: Record<number, SlideSelectionMode> = {};
 	private paragraphSelectionVisible: Record<number, boolean> = {};
-	private paragraphCompletionOverrides: Record<number, boolean> = {};
 	private paragraphsSnapshot: Paragraph[] = [];
 	private paragraphsSubscription?: Subscription;
 	private undoHistoryLengthSubscription?: Subscription;
@@ -225,7 +224,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 	selectSlideCandidate(paragraph: Paragraph, selectedSlide: SlideCandidate): void {
 		this.paragraphViewModes[paragraph.id] = 'suggestions';
 		this.paragraphSelectionVisible[paragraph.id] = false;
-		delete this.paragraphCompletionOverrides[paragraph.id];
 		this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate: selectedSlide }));
 		this.updateAvailableSlides();
 		this.updateCompletionStats();
@@ -235,7 +233,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 		const remainingCandidates = (paragraph.slideCandidates ?? []).filter((candidate) => candidate.slide_file !== slideToReject.slide_file);
 		if (remainingCandidates.length === 0 && this.getSelectedSlides(paragraph).length === 0) {
 			this.paragraphSelectionVisible[paragraph.id] = false;
-			delete this.paragraphCompletionOverrides[paragraph.id];
 		}
 		this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate: slideToReject }));
 		this.updateAvailableSlides();
@@ -250,7 +247,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 		const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
 		this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
 		this.paragraphSelectionVisible[paragraph.id] = true;
-		delete this.paragraphCompletionOverrides[paragraph.id];
 		this.updateCompletionStats();
 	}
 
@@ -259,7 +255,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 		if ((paragraph.slideCandidates ?? []).length > 0) {
 			this.store.dispatch(clearSlideCandidatesForParagraph({ paragraphId: paragraph.id }));
 		}
-		delete this.paragraphCompletionOverrides[paragraph.id];
 		this.updateCompletionStats();
 	}
 
@@ -290,7 +285,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 		const slideCandidate: SlideCandidate = this.createCandidateFromSlide(slide);
 		this.paragraphViewModes[paragraph.id] = 'library';
 		this.paragraphSelectionVisible[paragraph.id] = false;
-		delete this.paragraphCompletionOverrides[paragraph.id];
 		this.store.dispatch(selectSlideForParagraph({ paragraph, slideCandidate }));
 		this.updateAvailableSlides();
 		this.updateCompletionStats();
@@ -301,10 +295,8 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 		if (remainingSelected.length === 0) {
 			const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
 			this.paragraphSelectionVisible[paragraph.id] = hasCandidates;
-			delete this.paragraphCompletionOverrides[paragraph.id];
 		} else {
 			this.paragraphSelectionVisible[paragraph.id] = false;
-			delete this.paragraphCompletionOverrides[paragraph.id];
 		}
 		this.store.dispatch(rejectSlideForParagraph({ paragraph, slideCandidate }));
 		this.updateAvailableSlides();
@@ -332,7 +324,7 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 			return true;
 		}
 
-		return this.paragraphCompletionOverrides[paragraph.id] ?? false;
+		return false;
 	}
 
 	trackParagraph(_index: number, paragraph: Paragraph): number {
@@ -356,13 +348,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 	private cleanupParagraphState(paragraphs: Paragraph[]): void {
 		const validIds = new Set(paragraphs.map((paragraph) => paragraph.id));
 
-		Object.keys(this.paragraphCompletionOverrides).forEach((key) => {
-			const id = Number(key);
-			if (!validIds.has(id)) {
-				delete this.paragraphCompletionOverrides[id];
-			}
-		});
-
 		Object.keys(this.paragraphSelectionVisible).forEach((key) => {
 			const id = Number(key);
 			if (!validIds.has(id)) {
@@ -383,7 +368,6 @@ export class ScriptEditorComponent implements OnInit, OnDestroy {
 		paragraphs.forEach((paragraph) => {
 			const hasSelected = (paragraph.selectedSlides ?? []).length > 0;
 			const hasCandidates = (paragraph.slideCandidates ?? []).length > 0;
-			delete this.paragraphCompletionOverrides[paragraph.id];
 			this.paragraphViewModes[paragraph.id] = hasCandidates ? 'suggestions' : 'library';
 			this.paragraphSelectionVisible[paragraph.id] = hasSelected ? false : hasCandidates;
 		});
