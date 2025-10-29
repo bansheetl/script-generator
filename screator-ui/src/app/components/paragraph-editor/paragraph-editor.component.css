@@ -190,18 +190,12 @@
 	background: var(--green-600, #16a34a);
 }
 
-:host ::ng-deep .reject-button.p-button {
-	background: var(--red-500, #ef4444);
-}
-
-:host ::ng-deep .reject-button.p-button:hover {
-	background: var(--red-600, #dc2626);
-}
-
+:host ::ng-deep .reject-button.p-button,
 :host ::ng-deep .delete-button.p-button {
 	background: var(--red-500, #ef4444);
 }
 
+:host ::ng-deep .reject-button.p-button:hover,
 :host ::ng-deep .delete-button.p-button:hover {
 	background: var(--red-600, #dc2626);
 }

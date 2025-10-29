@@ -42,7 +42,7 @@ test.describe('Screator UI - Slide Deletion', () => {
       const deleteButton = page.locator('[data-testid="delete-library-slide-button"]').first();
       await expect(deleteButton).toBeVisible();
       
-      await safeScreenshot(page, 'slide-deletion-library-view');
+      await safeScreenshot(page, { path: 'slide-deletion-library-view' });
     }
   });
 
@@ -69,7 +69,7 @@ test.describe('Screator UI - Slide Deletion', () => {
       const countBefore = await slidesBefore.count();
       
       // Take screenshot before deletion
-      await safeScreenshot(page, 'slide-deletion-before');
+      await safeScreenshot(page, { path: 'slide-deletion-before' });
       
       // Click delete button on first slide
       const deleteButton = page.locator('[data-testid="delete-library-slide-button"]').first();
@@ -94,7 +94,7 @@ test.describe('Screator UI - Slide Deletion', () => {
       const countAfter = await slidesAfter.count();
       
       // Take screenshot after deletion
-      await safeScreenshot(page, 'slide-deletion-after');
+      await safeScreenshot(page, { path: 'slide-deletion-after' });
       
       // Verify that one slide was removed
       expect(countAfter).toBe(countBefore - 1);
@@ -154,7 +154,7 @@ test.describe('Screator UI - Slide Deletion', () => {
       const countAfterReload = await slidesAfterReload.count();
       
       // Take screenshot after reload
-      await safeScreenshot(page, 'slide-deletion-after-reload');
+      await safeScreenshot(page, { path: 'slide-deletion-after-reload' });
       
       // Verify that the deleted slide is still not present
       // (We can't easily assert the exact count without knowing the initial state,
@@ -213,7 +213,7 @@ test.describe('Screator UI - Slide Deletion', () => {
       const countAfterUndo = await slidesAfterUndo.count();
       
       // Take screenshot after undo
-      await safeScreenshot(page, 'slide-deletion-after-undo');
+      await safeScreenshot(page, { path: 'slide-deletion-after-undo' });
       
       // Verify that the slide was restored
       expect(countAfterUndo).toBe(countBefore);
