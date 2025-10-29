@@ -1,5 +1,5 @@
 import { Action, createReducer, on } from '@ngrx/store';
-import { clearSlideCandidatesForParagraph, redo, rejectSlideForParagraph, scriptDataLoaded, scriptSaved, scriptSelected, selectSlideForParagraph, slidesLoaded, splitParagraph, undo, updateParagraphText } from './app.actions';
+import { clearSlideCandidatesForParagraph, deleteSlideFromLibrary, deletedSlidesLoaded, redo, rejectSlideForParagraph, scriptDataLoaded, scriptSaved, scriptSelected, selectSlideForParagraph, slidesLoaded, splitParagraph, undo, updateParagraphText } from './app.actions';
 import { Paragraph, SlideCandidate } from './app.model';
 import { Slide } from './slide.model';
 
@@ -7,6 +7,7 @@ export interface AppState {
     currentScriptId: string | null;
     paragraphs: Paragraph[];
     allSlides: Slide[];
+    deletedSlides: string[];
     scriptEdited: boolean;
     undoHistory: AppState[];
     redoHistory: AppState[];
@@ -16,6 +17,7 @@ export const initialState: AppState = {
     currentScriptId: null,
     paragraphs: [],
     allSlides: [],
+    deletedSlides: [],
     scriptEdited: false,
     undoHistory: [],
     redoHistory: []
@@ -26,6 +28,7 @@ function copyState(state: AppState): AppState {
         currentScriptId: state.currentScriptId,
         paragraphs: state.paragraphs.map((paragraph) => Paragraph.fromJson(paragraph)),
         allSlides: state.allSlides.map((slide) => ({ ...slide })),
+        deletedSlides: [...state.deletedSlides],
         scriptEdited: state.scriptEdited,
         undoHistory: [],
         redoHistory: []
@@ -50,6 +53,7 @@ const _appReducer = createReducer(
         return {
             currentScriptId: scriptId,
             allSlides: state.allSlides,
+            deletedSlides: state.deletedSlides,
             undoHistory: [],
             redoHistory: [],
             scriptEdited: false,
@@ -59,6 +63,10 @@ const _appReducer = createReducer(
     on(slidesLoaded, (state, { slides }) => ({
         ...state,
         allSlides: slides.map((slide) => ({ ...slide }))
+    })),
+    on(deletedSlidesLoaded, (state, { deletedSlides }) => ({
+        ...state,
+        deletedSlides: [...deletedSlides]
     })),
     on(selectSlideForParagraph, (state, { paragraph, slideCandidate }) => {
         const updatedParagraphs = state.paragraphs.map((p) => {
@@ -87,6 +95,7 @@ const _appReducer = createReducer(
         return {
             currentScriptId: state.currentScriptId,
             allSlides: state.allSlides,
+            deletedSlides: state.deletedSlides,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
@@ -109,6 +118,7 @@ const _appReducer = createReducer(
         return {
             currentScriptId: state.currentScriptId,
             allSlides: state.allSlides,
+            deletedSlides: state.deletedSlides,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
@@ -130,6 +140,7 @@ const _appReducer = createReducer(
         return {
             currentScriptId: state.currentScriptId,
             allSlides: state.allSlides,
+            deletedSlides: state.deletedSlides,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
@@ -149,6 +160,7 @@ const _appReducer = createReducer(
         return {
             currentScriptId: state.currentScriptId,
             allSlides: state.allSlides,
+            deletedSlides: state.deletedSlides,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
@@ -176,6 +188,7 @@ const _appReducer = createReducer(
         return {
             currentScriptId: state.currentScriptId,
             allSlides: state.allSlides,
+            deletedSlides: state.deletedSlides,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
@@ -188,6 +201,7 @@ const _appReducer = createReducer(
             return {
                 currentScriptId: state.currentScriptId,
                 allSlides: lastState.allSlides,
+                deletedSlides: lastState.deletedSlides,
                 undoHistory: state.undoHistory.slice(0, state.undoHistory.length - 1),
                 redoHistory: [...state.redoHistory, copyState(state)],
                 scriptEdited: true,
@@ -203,6 +217,7 @@ const _appReducer = createReducer(
             return {
                 currentScriptId: state.currentScriptId,
                 allSlides: lastState.allSlides,
+                deletedSlides: lastState.deletedSlides,
                 undoHistory: [...state.undoHistory, copyState(state)],
                 redoHistory: state.redoHistory.slice(0, state.redoHistory.length - 1),
                 scriptEdited: true,
@@ -211,6 +226,22 @@ const _appReducer = createReducer(
         } else {
             return state;
         }
+    }),
+    on(deleteSlideFromLibrary, (state, { slideFile }) => {
+        // Don't delete if the slide is already deleted
+        if (state.deletedSlides.includes(slideFile)) {
+            return state;
+        }
+
+        return {
+            currentScriptId: state.currentScriptId,
+            allSlides: state.allSlides,
+            deletedSlides: [...state.deletedSlides, slideFile],
+            undoHistory: [...state.undoHistory, copyState(state)],
+            redoHistory: [],
+            scriptEdited: true,
+            paragraphs: state.paragraphs.map((item) => Paragraph.fromJson(item))
+        };
     }),
     on(scriptSaved, (state) => ({
         ...state,

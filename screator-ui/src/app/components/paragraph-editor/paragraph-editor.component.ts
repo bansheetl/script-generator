@@ -8,7 +8,7 @@ import { CarouselModule } from 'primeng/carousel';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { Observable, Subscription, firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { clearSlideCandidatesForParagraph, rejectSlideForParagraph, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from '../../app.actions';
+import { clearSlideCandidatesForParagraph, deleteSlideFromLibrary, rejectSlideForParagraph, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from '../../app.actions';
 import { Paragraph, SlideCandidate } from '../../app.model';
 import { Slide } from '../../slide.model';
 import { AppState } from '../../app.reducers';
@@ -253,6 +253,11 @@ export class ParagraphEditorComponent implements OnInit, OnChanges, OnDestroy {
 			this.selectionVisible = false;
 		}
 		this.store.dispatch(rejectSlideForParagraph({ paragraph: this.paragraph, slideCandidate }));
+		this.completionChanged.emit();
+	}
+
+	deleteSlideFromLibrary(slideFile: string): void {
+		this.store.dispatch(deleteSlideFromLibrary({ slideFile }));
 		this.completionChanged.emit();
 	}
 

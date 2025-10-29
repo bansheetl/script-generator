@@ -144,6 +144,15 @@
 													class="slide-action-button insert-button"
 													(click)="onLibrarySlideChosen(slideOption.slide_file)"
 												></button>
+												<button
+													data-testid="delete-library-slide-button"
+													pButton
+													type="button"
+													icon="pi pi-trash"
+													label="Delete"
+													class="slide-action-button delete-button"
+													(click)="deleteSlideFromLibrary(slideOption.slide_file)"
+												></button>
 											</div>
 										</div>
 									</ng-template>

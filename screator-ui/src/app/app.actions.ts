@@ -13,3 +13,5 @@ export const undo = createAction('[Commands] Undo');
 export const redo = createAction('[Commands] Redo');
 export const updateParagraphText = createAction('[Paragraph] Update Text', props<{ paragraphId: number, newText: string }>());
 export const splitParagraph = createAction('[Paragraph] Split', props<{ paragraphId: number, updatedText: string, newParagraphText: string }>());
+export const deleteSlideFromLibrary = createAction('[Slides] Delete From Library', props<{ slideFile: string }>());
+export const deletedSlidesLoaded = createAction('[Slides] Deleted Slides Loaded', props<{ deletedSlides: string[] }>());
