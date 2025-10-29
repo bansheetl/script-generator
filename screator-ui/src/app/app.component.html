@@ -27,6 +27,8 @@
       <div class="flex flex-column gap-1 dropdown-group">
         <span class="dropdown-label text-sm text-600">Selected script</span>
         <p-select
+          id="script-selector"
+          data-testid="script-selector"
           class="script-dropdown w-12rem"
           [options]="scripts"
           optionLabel="label"
@@ -39,6 +41,8 @@
       </div>
       <div class="flex align-items-center gap-2 action-group">
         <button
+          id="reload-button"
+          data-testid="reload-button"
           pButton
           type="button"
           icon="pi pi-refresh"
@@ -47,6 +51,8 @@
           [disabled]="isLoading"
         ></button>
         <button
+          id="save-button"
+          data-testid="save-button"
           pButton
           type="button"
           label="Save Script"

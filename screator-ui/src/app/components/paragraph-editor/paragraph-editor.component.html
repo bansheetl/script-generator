@@ -13,6 +13,7 @@
 											<div class="score-bar" [style.width.%]="selectedSlide.score * 100"></div>
 										</div>
 										<button
+											data-testid="remove-selected-slide-button"
 											pButton
 											type="button"
 											icon="pi pi-times"
@@ -33,6 +34,8 @@
 				@if (!selectionVisible) {
 					<div class="paragraph-divider">
 						<button
+							id="add-slide-button-{{ paragraph.id }}"
+							data-testid="add-slide-button"
 							pButton
 							type="button"
 							icon="pi pi-plus"
@@ -46,6 +49,8 @@
 				@if (selectionVisible) {
 					<div class="selection-header">
 						<button
+							id="cancel-selection-button-{{ paragraph.id }}"
+							data-testid="cancel-selection-button"
 							pButton
 							type="button"
 							icon="pi pi-times"
@@ -56,6 +61,8 @@
 					</div>
 					<div class="slide-mode-switch-container">
 						<p-selectbutton
+							id="slide-mode-switch-{{ paragraph.id }}"
+							data-testid="slide-mode-switch"
 							class="slide-mode-switch"
 							[options]="modeOptions"
 							optionLabel="label"
@@ -85,6 +92,7 @@
 										</div>
 										<div class="slide-action-bar">
 											<button
+												data-testid="approve-slide-button"
 												pButton
 												type="button"
 												icon="pi pi-check"
@@ -93,6 +101,7 @@
 												(click)="selectSlideCandidate(slideCandidate)"
 											></button>
 											<button
+												data-testid="reject-slide-button"
 												pButton
 												type="button"
 												icon="pi pi-times"
@@ -127,6 +136,7 @@
 											<img [src]="slideOption.slide_file" class="slide" />
 											<div class="slide-action-bar library-action">
 												<button
+													data-testid="insert-library-slide-button"
 													pButton
 													type="button"
 													icon="pi pi-plus"
@@ -150,11 +160,13 @@
 
 			<div class="paragraph-text border-round surface-section shadow-1" [class.editing]="isEditing">
 				@if (isParagraphCompleted()) {
-					<i class="pi pi-check-circle paragraph-status-icon"></i>
+					<i class="pi pi-check-circle paragraph-status-icon" data-testid="paragraph-completed-icon"></i>
 				}
 				@if (isEditing) {
-					<div class="paragraph-edit-container">
+					<div class="paragraph-edit-container" data-testid="paragraph-edit-container">
 						<textarea
+							id="paragraph-textarea-{{ paragraph.id }}"
+							data-testid="paragraph-textarea"
 							class="paragraph-edit-textarea"
 							rows="6"
 							[(ngModel)]="textDraft"
@@ -162,6 +174,8 @@
 						></textarea>
 						<div class="paragraph-edit-actions">
 							<button
+								id="paragraph-save-button-{{ paragraph.id }}"
+								data-testid="paragraph-save-button"
 								pButton
 								type="button"
 								label="Save"
@@ -171,6 +185,8 @@
 								(click)="saveParagraph($event)"
 							></button>
 							<button
+								id="paragraph-cancel-button-{{ paragraph.id }}"
+								data-testid="paragraph-cancel-button"
 								pButton
 								type="button"
 								label="Cancel"
@@ -182,6 +198,8 @@
 					</div>
 				} @else {
 					<div
+						id="paragraph-text-{{ paragraph.id }}"
+						data-testid="paragraph-text"
 						class="paragraph-text-body paragraph-readonly"
 						tabindex="0"
 						(click)="enterEdit($event)"

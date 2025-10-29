@@ -1,0 +1,7 @@
+# Playwright Test Results
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Test data (keep fixtures, but ignore test runs)
+test-output/

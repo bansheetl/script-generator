@@ -1,6 +1,8 @@
 <div class="script-editor flex flex-column gap-4">
 	<div class="editor-controls flex align-items-center justify-content-end gap-2">
 		<button
+			id="undo-button"
+			data-testid="undo-button"
 			pButton
 			type="button"
 			icon="pi pi-undo"
@@ -9,6 +11,8 @@
 			(click)="undo()"
 		></button>
 		<button
+			id="redo-button"
+			data-testid="redo-button"
 			pButton
 			type="button"
 			icon="pi pi-redo"
@@ -18,12 +22,14 @@
 		></button>
 	</div>
 
-	<div class="editor-body">
+	<div class="editor-body" id="editor-body" data-testid="editor-body">
 		@if (paragraphs$ | async; as paragraphs) {
 			@if (paragraphs.length > 0) {
-				<div class="paragraph-container flex flex-column gap-4">
+				<div class="paragraph-container flex flex-column gap-4" id="paragraph-container" data-testid="paragraph-container">
 					@for (paragraph of paragraphs; track trackParagraph($index, paragraph)) {
 						<app-paragraph-editor
+							[attr.data-testid]="'paragraph-' + paragraph.id"
+							[attr.data-paragraph-id]="paragraph.id"
 							[paragraph]="paragraph"
 							[isEditing]="isParagraphEditing(paragraph)"
 							[undoHistoryLength]="undoHistoryLength"
@@ -32,7 +38,7 @@
 					}
 				</div>
 			} @else {
-				<div class="empty-state surface-border border-1 border-dashed border-round-md p-5 text-center text-600">
+				<div class="empty-state surface-border border-1 border-dashed border-round-md p-5 text-center text-600" id="empty-state" data-testid="empty-state">
 					Select a script to start editing.
 				</div>
 			}

@@ -98,15 +98,46 @@ Generated artifacts are written to `output/<id>/` and include `script.json`, `sl
 
 ## Testing
 
+### Python Unit Tests
 Run the Python unit tests:
 ```sh
 python -m unittest discover tests
 ```
 
+### Angular Unit Tests
 Angular unit tests:
 ```sh
 npm --prefix screator-ui run test
 ```
+
+### End-to-End Tests (Playwright)
+Comprehensive E2E tests are available for the Electron UI application:
+
+```sh
+# Run all E2E tests
+cd screator-ui && npm run test:e2e
+
+# Interactive UI mode (recommended for development)
+npm run test:e2e:ui
+
+# Record new tests by interacting with the app
+npm run test:e2e:record
+
+# View test reports
+npm run test:e2e:report
+```
+
+**Quick start guide**: See `E2E_TESTING_GUIDE.md` for detailed instructions on running and recording tests.
+
+**Full documentation**: See `screator-ui/e2e/README.md` for comprehensive E2E testing documentation.
+
+The E2E test suite covers:
+- Application launch and initialization
+- Script loading and selection
+- Text editing and manipulation
+- Save functionality and persistence
+- Keyboard shortcuts (Cmd+S, undo/redo)
+- Complex workflows and error handling
 
 ## Troubleshooting
 
