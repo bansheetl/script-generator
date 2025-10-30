@@ -37,6 +37,9 @@ yarn-error.log
 testem.log
 /typings
 
+# Playwright generated report artifacts
+/playwright-report/
+
 # System files
 .DS_Store
 Thumbs.db
