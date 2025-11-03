@@ -1,18 +1,19 @@
 export class ScriptDocument {
-    constructor(public content: Paragraph[] = []) {}
+    constructor(public content: Paragraph[] = [], public deletedSlides: string[] = []) {}
 
     static fromJson(raw: unknown): ScriptDocument {
         const parsed = ScriptDocument.safeParse(raw);
         const items = Array.isArray(parsed?.content) ? parsed.content : [];
         const paragraphs = items.map((entry: unknown) => Paragraph.fromJson(entry));
-        return new ScriptDocument(paragraphs);
+        const deletedSlides = Array.isArray(parsed?.deletedSlides) ? parsed.deletedSlides : [];
+        return new ScriptDocument(paragraphs, deletedSlides);
     }
 
     static fromScript(raw: unknown): ScriptDocument {
         const parsed = ScriptDocument.safeParse(raw);
         const items = Array.isArray(parsed?.content) ? parsed.content : [];
         const paragraphs = items.map((entry: unknown) => Paragraph.fromScriptEntry(entry));
-        return new ScriptDocument(paragraphs);
+        return new ScriptDocument(paragraphs, []);
     }
 
     cloneContent(): Paragraph[] {
@@ -21,7 +22,8 @@ export class ScriptDocument {
 
     toJSON(): unknown {
         return {
-            content: this.content.map((paragraph) => paragraph.toJSON())
+            content: this.content.map((paragraph) => paragraph.toJSON()),
+            deletedSlides: this.deletedSlides
         };
     }
 

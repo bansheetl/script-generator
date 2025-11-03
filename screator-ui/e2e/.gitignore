@@ -3,5 +3,8 @@
 /playwright-report/
 /playwright/.cache/
 
-# Test data (keep fixtures, but ignore test runs)
-test-output/
+# Test data
+# Keep deterministic fixture outputs in fixtures/test-output/ (previously ignored by 'test-output/' pattern).
+# If transient run output dirs are needed in future, name them e.g. test-output-run/ and add an ignore rule.
+# (Leaving commented example below.)
+#test-output-run/

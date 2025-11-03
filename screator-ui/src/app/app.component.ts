@@ -5,13 +5,13 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { Paragraph, ScriptDocument } from './app.model';
 import { Slide } from './slide.model';
 import { AppState } from './app.reducers';
-import { scriptDataLoaded, scriptSaved, scriptSelected, slidesLoaded } from './app.actions';
-import { selectParagraphs, selectScriptEdited } from './app.selectors';
+import { scriptDataLoaded, scriptSaved, scriptSelected, slidesLoaded, deletedSlidesLoaded } from './app.actions';
+import { selectParagraphs, selectScriptEdited, selectDeletedSlides } from './app.selectors';
 import { ScriptEditorComponent } from './components/script-editor/script-editor.component';
 import { SCRIPT_ROOT_DIR } from './script.constants';
 import { ScriptConversionService } from './services/script-conversion.service';
@@ -39,6 +39,7 @@ export class AppComponent implements OnInit {
 
   readonly paragraphs$: Observable<Paragraph[]>;
   readonly scriptEdited$: Observable<boolean>;
+  readonly deletedSlides$: Observable<string[]>;
 
   constructor(
     private store: Store<AppState>,
@@ -46,6 +47,7 @@ export class AppComponent implements OnInit {
   ) {
     this.paragraphs$ = this.store.select(selectParagraphs);
     this.scriptEdited$ = this.store.select(selectScriptEdited);
+    this.deletedSlides$ = this.store.select(selectDeletedSlides);
   }
 
   ngOnInit(): void {
@@ -82,6 +84,7 @@ export class AppComponent implements OnInit {
       }
 
       this.store.dispatch(slidesLoaded({ slides }));
+      this.store.dispatch(deletedSlidesLoaded({ deletedSlides: document.deletedSlides }));
       this.store.dispatch(scriptDataLoaded({ scriptId, paragraphs: document.cloneContent() }));
     } catch (error) {
       console.error(`Error loading script \"${scriptId}\":`, error);
@@ -97,17 +100,22 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    this.paragraphs$.pipe(take(1)).subscribe((paragraphs) => {
-      const document = new ScriptDocument(paragraphs.map((paragraph) => Paragraph.fromJson(paragraph)));
-      const outputPath = `${SCRIPT_ROOT_DIR}/${this.selectedScript}/script_edited.json`;
-      const payload = JSON.stringify(document.toJSON(), null, 2);
+    combineLatest([this.paragraphs$, this.deletedSlides$])
+      .pipe(take(1))
+      .subscribe(([paragraphs, deletedSlides]) => {
+        const document = new ScriptDocument(
+          paragraphs.map((paragraph) => Paragraph.fromJson(paragraph)),
+          deletedSlides
+        );
+        const outputPath = `${SCRIPT_ROOT_DIR}/${this.selectedScript}/script_edited.json`;
+        const payload = JSON.stringify(document.toJSON(), null, 2);
 
-      fs.writeFile(outputPath, payload, 'utf8', (err: any) => {
-        if (err) {
-          console.error('Error saving script:', err);
-        }
+        fs.writeFile(outputPath, payload, 'utf8', (err: any) => {
+          if (err) {
+            console.error('Error saving script:', err);
+          }
+        });
       });
-    });
 
     this.store.dispatch(scriptSaved());
   }

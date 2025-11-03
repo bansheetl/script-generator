@@ -40,6 +40,12 @@ export const selectAvailableSlides = createSelector(
         state.paragraphs.forEach((paragraph) => {
             (paragraph.selectedSlides ?? []).forEach((selected) => assigned.add(selected.slide_file));
         });
-        return state.allSlides.filter((slide) => !assigned.has(slide.slide_file));
+        const deleted = new Set(state.deletedSlides);
+        return state.allSlides.filter((slide) => !assigned.has(slide.slide_file) && !deleted.has(slide.slide_file));
     }
+);
+
+export const selectDeletedSlides = createSelector(
+    selectAppState,
+    (state: AppState) => state.deletedSlides
 );
