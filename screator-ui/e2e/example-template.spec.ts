@@ -1,4 +1,5 @@
 import { test, expect } from './electron-test';
+import type { Page } from '@playwright/test';
 
 /**
  * TEMPLATE TEST FILE
@@ -16,14 +17,39 @@ import { test, expect } from './electron-test';
  *   npm run test:e2e:record
  */
 
+// Helper to load first script
+async function loadFirstScript(page: Page) {
+  await page.waitForLoadState('domcontentloaded');
+  // Open script selector using test id
+  const selector = page.locator('[data-testid="script-selector"]');
+  await selector.click();
+  await page.waitForTimeout(300);
+  const firstOption = page.locator('[role="option"]').first();
+  if (await firstOption.count() > 0) {
+    await firstOption.click();
+    await page.waitForTimeout(1500); // allow paragraphs to render
+  }
+}
+
+// Helper to make a paragraph edit (enables save button)
+async function editFirstParagraph(page: Page) {
+  const paragraphText = page.locator('[data-testid="paragraph-text"]').first();
+  await paragraphText.click();
+  await page.waitForTimeout(300);
+  const textArea = page.locator('[data-testid="paragraph-textarea"]').first();
+  const original = (await textArea.inputValue()) || '';
+  await textArea.fill(original + ' [E2E EDIT]');
+  // Save paragraph edit
+  const saveParagraphBtn = page.locator('[data-testid="paragraph-save-button"]').first();
+  if (await saveParagraphBtn.count() > 0) {
+    await saveParagraphBtn.click();
+    await page.waitForTimeout(300);
+  }
+}
+
 test.describe('Template Test Suite', () => {
-  // This runs before each test in this describe block
   test.beforeEach(async ({ page }) => {
-    // Wait for the app to fully load
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1000);
-    
-    // Add any common setup here, like loading a specific script
+    await loadFirstScript(page);
   });
 
   // This runs after each test in this describe block
@@ -36,70 +62,56 @@ test.describe('Template Test Suite', () => {
   });
 
   test('example test - click a button', async ({ page }) => {
-    // 1. Find an element
-    const button = page.locator('button:has-text("Save")');
-    
-    // 2. Verify it exists
-    await expect(button).toBeVisible();
-    
-    // 3. Interact with it
-    await button.click();
-    
-    // 4. Wait for result
+    // Ensure save button becomes enabled by editing a paragraph
+    await editFirstParagraph(page);
+    const saveButton = page.locator('[data-testid="save-button"]');
+    await expect(saveButton).toBeVisible();
+    // Wait until enabled
+    await expect(saveButton).toBeEnabled();
+    await saveButton.click();
     await page.waitForTimeout(500);
-    
-    // 5. Assert expected outcome
-    // (Replace with actual assertion based on your app's behavior)
-    await expect(button).toBeVisible();
+    // Save button should remain visible
+    await expect(saveButton).toBeVisible();
   });
 
   test('example test - fill a form field', async ({ page }) => {
-    // 1. Find a text input or textarea
-    const textArea = page.locator('textarea').first();
-    
-    // 2. Get current value
+    await editFirstParagraph(page);
+    // Re-open editor to verify content
+    const paragraphText = page.locator('[data-testid="paragraph-text"]').first();
+    await paragraphText.click();
+    await page.waitForTimeout(300);
+    const textArea = page.locator('[data-testid="paragraph-textarea"]').first();
     const currentValue = await textArea.inputValue();
-    
-    // 3. Fill with new value
     const newValue = currentValue + ' TEST TEXT';
     await textArea.fill(newValue);
-    
-    // 4. Verify the change
     await expect(textArea).toHaveValue(newValue);
   });
 
   test('example test - work with dropdowns', async ({ page }) => {
-    // 1. Open dropdown
-    const dropdown = page.locator('p-select');
-    await dropdown.click();
-    
-    // 2. Wait for options to appear
-    await page.waitForTimeout(500);
-    
-    // 3. Select an option
-    await page.locator('p-option').first().click();
-    
-    // 4. Wait for selection to take effect
-    await page.waitForTimeout(1000);
-    
-    // 5. Verify something changed (adjust based on your app)
+    // Already loaded first script in beforeEach. Switch to another script if available.
+    const selector = page.locator('[data-testid="script-selector"]');
+    await selector.click();
+    await page.waitForTimeout(300);
+    const options = page.locator('[role="option"]');
+    const count = await options.count();
+    if (count > 1) {
+      await options.nth(1).click();
+      await page.waitForTimeout(1500);
+    }
     const scriptEditor = page.locator('app-script-editor');
     await expect(scriptEditor).toBeVisible();
   });
 
   test('example test - keyboard shortcuts', async ({ page }) => {
-    // 1. Set up initial state
-    const textArea = page.locator('textarea').first();
+    await editFirstParagraph(page);
+    // Enter edit mode again
+    const paragraphText = page.locator('[data-testid="paragraph-text"]').first();
+    await paragraphText.click();
+    await page.waitForTimeout(300);
+    const textArea = page.locator('[data-testid="paragraph-textarea"]').first();
     await textArea.fill('Test text');
-    
-    // 2. Use keyboard shortcut (Cmd+S on Mac, Ctrl+S on Windows/Linux)
     await page.keyboard.press('Meta+s');
-    
-    // 3. Wait for action to complete
-    await page.waitForTimeout(1000);
-    
-    // 4. Verify result
-    // (Add appropriate assertions based on save behavior)
+    await page.waitForTimeout(800);
     await expect(textArea).toBeVisible();
   });
 
@@ -111,31 +123,21 @@ test.describe('Template Test Suite', () => {
   });
 
   test('example test - with multiple steps', async ({ page }) => {
-    // Step 1: Load data
-    const dropdown = page.locator('p-select');
-    await dropdown.click();
-    await page.waitForTimeout(500);
-    await page.locator('p-option').first().click();
-    await page.waitForTimeout(2000);
-    
-    // Take screenshot after step 1
+    // Step 1: Ensure script loaded (beforeEach already did) & edit paragraph
+    await editFirstParagraph(page);
     await page.screenshot({ path: 'test-results/step1-loaded.png' });
-    
-    // Step 2: Make changes
-    const textArea = page.locator('textarea').first();
+    // Step 2: Further modify text
+    const paragraphText = page.locator('[data-testid="paragraph-text"]').first();
+    await paragraphText.click();
+    await page.waitForTimeout(300);
+    const textArea = page.locator('[data-testid="paragraph-textarea"]').first();
     const originalText = await textArea.inputValue();
     await textArea.fill(originalText + ' MODIFIED');
-    
-    // Take screenshot after step 2
     await page.screenshot({ path: 'test-results/step2-modified.png' });
-    
-    // Step 3: Save changes
+    // Step 3: Save (toolbar or shortcut)
     await page.keyboard.press('Meta+s');
-    await page.waitForTimeout(1000);
-    
-    // Take screenshot after step 3
+    await page.waitForTimeout(800);
     await page.screenshot({ path: 'test-results/step3-saved.png' });
-    
     // Step 4: Verify
     expect(await textArea.inputValue()).toContain('MODIFIED');
   });
