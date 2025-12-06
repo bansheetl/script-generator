@@ -1,9 +1,8 @@
-:host {
-	display: block;
-}
-
 .script-editor {
 	position: relative;
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
 }
 
 .editor-controls {
@@ -12,10 +11,44 @@
 	z-index: 900;
 	background: inherit;
 	padding-bottom: 0.5rem;
+	flex-shrink: 0;
+}
+
+.editor-body {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	height: calc(100vh - 3.5rem);
+}
+
+.editor-layout {
+	display: flex;
+	gap: 1.5rem;
+	align-items: stretch;
+	height: 100%;
+	position: relative;
+}
+
+.slide-library-sidebar {
+	flex: 0 0 20rem;
+	min-width: 20rem;
+	max-width: 20rem;
+	position: sticky;
+	overflow: auto;
+	top: 0;
+	align-self: flex-start;
+	height: 100vh;
+	overflow-y: auto;
 }
 
 .paragraph-container {
 	padding-bottom: 3rem;
+	padding-right: 0.75rem; /* give scrollbar a little breathing room */
+	flex: 1;
+	min-width: 0;
+	height: 100vh;
+	overflow-y: auto;
+	scrollbar-gutter: stable; /* reserve space so it doesn't hug content */
 }
 
 .paragraph-progress-overlay {

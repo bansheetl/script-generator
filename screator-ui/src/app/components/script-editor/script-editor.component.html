@@ -1,41 +1,25 @@
 <div class="script-editor flex flex-column gap-4">
-	<div class="editor-controls flex align-items-center justify-content-end gap-2">
-		<button
-			id="undo-button"
-			data-testid="undo-button"
-			pButton
-			type="button"
-			icon="pi pi-undo"
-			class="p-button-rounded p-button-text"
-			[disabled]="!(undoHistoryExists$ | async)"
-			(click)="undo()"
-		></button>
-		<button
-			id="redo-button"
-			data-testid="redo-button"
-			pButton
-			type="button"
-			icon="pi pi-redo"
-			class="p-button-rounded p-button-text"
-			[disabled]="!(redoHistoryExists$ | async)"
-			(click)="redo()"
-		></button>
-	</div>
+    
 
 	<div class="editor-body" id="editor-body" data-testid="editor-body">
 		@if (paragraphs$ | async; as paragraphs) {
 			@if (paragraphs.length > 0) {
-				<div class="paragraph-container flex flex-column gap-4" id="paragraph-container" data-testid="paragraph-container">
-					@for (paragraph of paragraphs; track trackParagraph($index, paragraph)) {
-						<app-paragraph-editor
-							[attr.data-testid]="'paragraph-' + paragraph.id"
-							[attr.data-paragraph-id]="paragraph.id"
-							[paragraph]="paragraph"
-							[isEditing]="isParagraphEditing(paragraph)"
-							[undoHistoryLength]="undoHistoryLength"
-							(editingStateChanged)="onEditingStateChanged($event)"
-						></app-paragraph-editor>
-					}
+				<div class="editor-layout flex gap-4">
+					<div class="slide-library-sidebar">
+						<app-slide-library></app-slide-library>
+					</div>
+					<div class="paragraph-container flex flex-column gap-4 flex-1" id="paragraph-container" data-testid="paragraph-container">
+						@for (paragraph of paragraphs; track trackParagraph($index, paragraph)) {
+							<app-paragraph-editor
+								[attr.data-testid]="'paragraph-' + paragraph.id"
+								[attr.data-paragraph-id]="paragraph.id"
+								[paragraph]="paragraph"
+								[isEditing]="isParagraphEditing(paragraph)"
+								[undoHistoryLength]="undoHistoryLength"
+								(editingStateChanged)="onEditingStateChanged($event)"
+							></app-paragraph-editor>
+						}
+					</div>
 				</div>
 			} @else {
 				<div class="empty-state surface-border border-1 border-dashed border-round-md p-5 text-center text-600" id="empty-state" data-testid="empty-state">

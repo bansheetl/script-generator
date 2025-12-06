@@ -15,3 +15,5 @@ export const updateParagraphText = createAction('[Paragraph] Update Text', props
 export const splitParagraph = createAction('[Paragraph] Split', props<{ paragraphId: number, updatedText: string, newParagraphText: string }>());
 export const deleteSlideFromLibrary = createAction('[Slides] Delete From Library', props<{ slideFile: string }>());
 export const deletedSlidesLoaded = createAction('[Slides] Deleted Slides Loaded', props<{ deletedSlides: string[] }>());
+export const selectSlideFromLibrary = createAction('[Library] Select Slide', props<{ slideFile: string }>());
+export const deselectSlideFromLibrary = createAction('[Library] Deselect Slide');

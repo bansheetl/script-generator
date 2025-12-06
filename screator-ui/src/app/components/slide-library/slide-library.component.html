@@ -1,0 +1,42 @@
+<div class="slide-library">
+	<div class="library-header">
+		<h3 class="library-title">Slide Library</h3>
+	</div>
+	<div class="library-content">
+		@if (availableSlides$ | async; as slides) {
+			@if (slides.length > 0) {
+				<div class="library-slides">
+					@for (slide of slides; track slide.slide_file) {
+						<div 
+							class="library-slide-card"
+							[class.selected]="isSlideSelected(slide.slide_file, (selectedSlide$ | async))"
+							(click)="selectSlide(slide.slide_file)"
+							[attr.data-testid]="'library-slide-' + slide.slide_name"
+						>
+							<div class="slide-preview">
+								<img [src]="slide.slide_file" [alt]="slide.slide_name" class="slide-image" />
+							</div>
+							<div class="slide-info">
+								<span class="slide-name text-sm">{{ slide.slide_name }}</span>
+							</div>
+							<button
+								pButton
+								type="button"
+								icon="pi pi-trash"
+								class="delete-slide-button p-button-rounded p-button-text p-button-sm"
+								(click)="deleteSlide(slide.slide_file, $event)"
+								[attr.aria-label]="'Delete ' + slide.slide_name"
+								data-testid="delete-library-slide-button"
+							></button>
+						</div>
+					}
+				</div>
+			} @else {
+				<div class="empty-library text-center text-600 p-4">
+					<i class="pi pi-images empty-icon"></i>
+					<p class="empty-message">No slides available</p>
+				</div>
+			}
+		}
+	</div>
+</div>

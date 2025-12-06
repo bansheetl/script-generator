@@ -5,25 +5,12 @@ import { Store } from '@ngrx/store';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CarouselModule } from 'primeng/carousel';
-import { SelectButtonModule } from 'primeng/selectbutton';
 import { Observable, Subscription, firstValueFrom } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { clearSlideCandidatesForParagraph, deleteSlideFromLibrary, rejectSlideForParagraph, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from '../../app.actions';
+import { clearSlideCandidatesForParagraph, rejectSlideForParagraph, selectSlideForParagraph, splitParagraph, undo, updateParagraphText } from '../../app.actions';
 import { Paragraph, SlideCandidate } from '../../app.model';
 import { Slide } from '../../slide.model';
 import { AppState } from '../../app.reducers';
-import { selectAvailableSlides } from '../../app.selectors';
-
-type SlideSelectionMode = 'suggestions' | 'library';
-
-interface ModeOption {
-	label: string;
-	value: SlideSelectionMode;
-}
-
-interface SlideOption extends Slide {
-	disabled?: boolean;
-}
+import { selectAvailableSlides, selectSelectedLibrarySlide } from '../../app.selectors';
 
 @Component({
 	selector: 'app-paragraph-editor',
@@ -32,7 +19,6 @@ interface SlideOption extends Slide {
 		CommonModule,
 		FormsModule,
 		ButtonModule,
-		SelectButtonModule,
 		CardModule,
 		CarouselModule
 	],
@@ -48,11 +34,7 @@ export class ParagraphEditorComponent implements OnInit, OnChanges, OnDestroy {
 	@Output() completionChanged = new EventEmitter<void>();
 
 	availableSlides$: Observable<Slide[]>;
-
-	modeOptions: ModeOption[] = [
-		{ label: 'Suggestions', value: 'suggestions' },
-		{ label: 'Slide library', value: 'library' }
-	];
+	selectedLibrarySlide$: Observable<string | null>;
 
 	responsiveOptions = [
 		{
@@ -72,8 +54,6 @@ export class ParagraphEditorComponent implements OnInit, OnChanges, OnDestroy {
 		}
 	];
 
-	viewMode: SlideSelectionMode = 'suggestions';
-	selectionVisible: boolean = false;
 	textDraft: string = '';
 	editUndoBaseline: number = 0;
 
@@ -81,6 +61,7 @@ export class ParagraphEditorComponent implements OnInit, OnChanges, OnDestroy {
 
 	constructor(private store: Store<AppState>) {
 		this.availableSlides$ = this.store.select(selectAvailableSlides);
+		this.selectedLibrarySlide$ = this.store.select(selectSelectedLibrarySlide);
 	}
 
 	ngOnInit(): void {
@@ -98,10 +79,6 @@ export class ParagraphEditorComponent implements OnInit, OnChanges, OnDestroy {
 	}
 
 	private initializeState(): void {
-		const hasSelected = (this.paragraph.selectedSlides ?? []).length > 0;
-		const hasCandidates = (this.paragraph.slideCandidates ?? []).length > 0;
-		this.viewMode = hasCandidates ? 'suggestions' : 'library';
-		this.selectionVisible = hasSelected ? false : hasCandidates;
 		this.textDraft = this.paragraph.text;
 	}
 
@@ -189,43 +166,22 @@ export class ParagraphEditorComponent implements OnInit, OnChanges, OnDestroy {
 
 	// Slide selection methods
 	selectSlideCandidate(selectedSlide: SlideCandidate): void {
-		this.viewMode = 'suggestions';
-		this.selectionVisible = false;
 		this.store.dispatch(selectSlideForParagraph({ paragraph: this.paragraph, slideCandidate: selectedSlide }));
 		this.completionChanged.emit();
 	}
 
 	rejectSlideCandidate(slideToReject: SlideCandidate): void {
-		const remainingCandidates = (this.paragraph.slideCandidates ?? []).filter(
-			(candidate) => candidate.slide_file !== slideToReject.slide_file
-		);
-		if (remainingCandidates.length === 0 && this.getSelectedSlides().length === 0) {
-			this.selectionVisible = false;
-		}
 		this.store.dispatch(rejectSlideForParagraph({ paragraph: this.paragraph, slideCandidate: slideToReject }));
 		this.completionChanged.emit();
 	}
 
-	onModeChange(mode: SlideSelectionMode): void {
-		this.viewMode = mode;
-	}
-
-	openSelection(): void {
-		const hasCandidates = (this.paragraph.slideCandidates ?? []).length > 0;
-		this.viewMode = hasCandidates ? 'suggestions' : 'library';
-		this.selectionVisible = true;
+	cancelSuggestions(): void {
+		this.store.dispatch(clearSlideCandidatesForParagraph({ paragraphId: this.paragraph.id }));
 		this.completionChanged.emit();
 	}
 
-	cancelSelection(): void {
-		this.selectionVisible = false;
-		if ((this.paragraph.slideCandidates ?? []).length > 0) {
-			this.store.dispatch(clearSlideCandidatesForParagraph({ paragraphId: this.paragraph.id }));
-		}
-		this.completionChanged.emit();
-	}
-
-	async onLibrarySlideChosen(slideFile: string | null): Promise<void> {
+	async addSlideFromLibrary(): Promise<void> {
+		const slideFile = await firstValueFrom(this.selectedLibrarySlide$);
 		if (!slideFile) {
 			return;
 		}
@@ -236,28 +192,12 @@ export class ParagraphEditorComponent implements OnInit, OnChanges, OnDestroy {
 		}
 
 		const slideCandidate: SlideCandidate = this.createCandidateFromSlide(slide);
-		this.viewMode = 'library';
-		this.selectionVisible = false;
 		this.store.dispatch(selectSlideForParagraph({ paragraph: this.paragraph, slideCandidate }));
 		this.completionChanged.emit();
 	}
 
 	removeSelectedSlide(slideCandidate: SlideCandidate): void {
-		const remainingSelected = (this.paragraph.selectedSlides ?? []).filter(
-			(selected) => selected.slide_file !== slideCandidate.slide_file
-		);
-		if (remainingSelected.length === 0) {
-			const hasCandidates = (this.paragraph.slideCandidates ?? []).length > 0;
-			this.selectionVisible = hasCandidates;
-		} else {
-			this.selectionVisible = false;
-		}
 		this.store.dispatch(rejectSlideForParagraph({ paragraph: this.paragraph, slideCandidate }));
-		this.completionChanged.emit();
-	}
-
-	deleteSlideFromLibrary(slideFile: string): void {
-		this.store.dispatch(deleteSlideFromLibrary({ slideFile }));
 		this.completionChanged.emit();
 	}
 
@@ -266,20 +206,7 @@ export class ParagraphEditorComponent implements OnInit, OnChanges, OnDestroy {
 		return this.paragraph.selectedSlides ?? [];
 	}
 
-	getAvailableSlidesForParagraph(): Observable<SlideOption[]> {
-		return this.availableSlides$.pipe(
-			map((slides) => slides
-				.map((slide) => ({ ...slide }))
-				.sort((a, b) => a.slide_name.localeCompare(b.slide_name))
-			)
-		);
-	}
-
 	isParagraphCompleted(): boolean {
-		if (this.selectionVisible) {
-			return false;
-		}
-
 		if (this.getSelectedSlides().length > 0) {
 			return true;
 		}

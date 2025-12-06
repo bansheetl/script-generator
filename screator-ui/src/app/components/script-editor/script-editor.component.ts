@@ -8,6 +8,7 @@ import { Paragraph } from '../../app.model';
 import { AppState } from '../../app.reducers';
 import { selectParagraphs, selectRedoHistoryExists, selectUndoHistoryExists, selectUndoHistoryLength } from '../../app.selectors';
 import { ParagraphEditorComponent } from '../paragraph-editor/paragraph-editor.component';
+import { SlideLibraryComponent } from '../slide-library/slide-library.component';
 
 @Component({
 	selector: 'app-script-editor',
@@ -15,7 +16,8 @@ import { ParagraphEditorComponent } from '../paragraph-editor/paragraph-editor.c
 	imports: [
 		CommonModule,
 		ButtonModule,
-		ParagraphEditorComponent
+		ParagraphEditorComponent,
+		SlideLibraryComponent
 	],
 	templateUrl: './script-editor.component.html',
 	styleUrls: ['./script-editor.component.css']

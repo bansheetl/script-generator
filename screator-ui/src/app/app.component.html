@@ -45,10 +45,31 @@
           data-testid="reload-button"
           pButton
           type="button"
-          icon="pi pi-refresh"
+          icon="pi pi-upload"
           class="p-button-rounded p-button-text"
           (click)="reloadScript()"
           [disabled]="isLoading"
+        ></button>
+        <button
+          id="undo-button"
+          data-testid="undo-button"
+          pButton
+          type="button"
+          title="undo-button"
+          icon="pi pi-chevron-left"
+          class="p-button-rounded p-button-text"
+          [disabled]="!(undoHistoryExists$ | async) || isLoading"
+          (click)="undo()"
+        ></button>
+        <button
+          id="redo-button"
+          data-testid="redo-button"
+          pButton
+          type="button"
+          icon="pi pi-chevron-right"
+          class="p-button-rounded p-button-text"
+          [disabled]="!(redoHistoryExists$ | async) || isLoading"
+          (click)="redo()"
         ></button>
         <button
           id="save-button"
@@ -64,7 +85,7 @@
       </div>
     </div>
     </p-toolbar>
-  <div class="content-wrapper flex-1 overflow-auto">
+  <div class="content-wrapper flex-1">
     <app-script-editor></app-script-editor>
   </div>
 </div>

@@ -1,4 +1,5 @@
 import sys
+import os
 import lectoring.script_lector as lector
 import interpreting.slide_interpreter as interpreter
 import matching.slide_script_matcher as matcher
@@ -7,16 +8,50 @@ import script_generator_auto as generator
 from repository import Repository
 
 
+def resolve_input_path(arg: str) -> str:
+    """Resolve CLI argument to an input folder path.
+
+    Accepts either a script number like '08' or a full/relative path like 'input/08'.
+    Returns the normalized path string 'input/<id>'.
+    """
+    if not arg:
+        return arg
+
+    s = arg.strip()
+    # Treat pure digits as an id
+    if s.isdigit():
+        return os.path.join("input", s)
+
+    # Normalize common forms
+    s = s[:-1] if s.endswith("/") else s
+
+    # If already points to input/<id>, keep it
+    if s.startswith("input/"):
+        return s
+
+    # If basename is a number, assume it's the id
+    base = os.path.basename(s)
+    if base.isdigit():
+        return os.path.join("input", base)
+
+    # Fallback to provided value
+    return s
+
+
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
-        print("Usage: python main.py <input_dir>")
+        print("Usage: python main.py <script_number | input_dir>")
+        print("Examples:")
+        print("  python main.py 08")
+        print("  python main.py input/08")
         sys.exit(1)
 
-    file_path = sys.argv[1]
-    
+    arg = sys.argv[1]
+    file_path = resolve_input_path(arg)
+
     repository = Repository(file_path)
-    
+
     lector.lector(repository)
     interpreter.interpret_slides(repository)
     script_search.init_script_search(repository)

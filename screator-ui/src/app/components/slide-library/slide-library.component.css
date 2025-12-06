@@ -1,0 +1,144 @@
+:host {
+	display: block;
+	height: 100%;
+}
+
+.slide-library {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	background: var(--surface-card, #ffffff);
+	border-right: 1px solid var(--surface-border, #dcdfe4);
+}
+
+.library-header {
+	padding: 1.5rem 1rem 1rem;
+	border-bottom: 1px solid var(--surface-border, #dcdfe4);
+	background: var(--surface-section, #f8fafc);
+}
+
+.library-title {
+	margin: 0;
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: var(--surface-900, #0f172a);
+}
+
+.library-content {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+.library-slides {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 1rem;
+}
+
+.library-slide-card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	border: 2px solid var(--surface-border, #dcdfe4);
+	border-radius: 0.5rem;
+	overflow: hidden;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	background: var(--surface-0, #ffffff);
+}
+
+.library-slide-card:hover {
+	border-color: var(--primary-color, #3b82f6);
+	box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+	transform: translateY(-2px);
+}
+
+.library-slide-card.selected {
+	border-color: var(--primary-color, #3b82f6);
+	background: rgba(59, 130, 246, 0.05);
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.slide-preview {
+	position: relative;
+	width: 100%;
+	background: var(--surface-section, #f8fafc);
+}
+
+.slide-image {
+	width: 100%;
+	aspect-ratio: 16 / 9;
+	object-fit: contain;
+	display: block;
+}
+
+.slide-info {
+	padding: 0.5rem 0.75rem;
+	border-top: 1px solid var(--surface-border, #dcdfe4);
+	background: var(--surface-0, #ffffff);
+}
+
+.slide-name {
+	color: var(--surface-700, #334155);
+	word-break: break-word;
+	display: block;
+}
+
+.delete-slide-button {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+	background: rgba(0, 0, 0, 0.6) !important;
+	color: var(--surface-0, #ffffff) !important;
+	width: 2rem;
+	height: 2rem;
+	opacity: 0;
+	transition: opacity 0.2s ease;
+}
+
+.library-slide-card:hover .delete-slide-button {
+	opacity: 1;
+}
+
+.delete-slide-button:hover {
+	background: rgba(239, 68, 68, 0.9) !important;
+}
+
+.empty-library {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	min-height: 200px;
+}
+
+.empty-icon {
+	font-size: 3rem;
+	color: var(--surface-400, #94a3b8);
+}
+
+.empty-message {
+	margin: 0;
+	font-size: 0.875rem;
+}
+
+/* Scrollbar styling */
+.library-content::-webkit-scrollbar {
+	width: 8px;
+}
+
+.library-content::-webkit-scrollbar-track {
+	background: var(--surface-100, #f1f5f9);
+}
+
+.library-content::-webkit-scrollbar-thumb {
+	background: var(--surface-400, #94a3b8);
+	border-radius: 4px;
+}
+
+.library-content::-webkit-scrollbar-thumb:hover {
+	background: var(--surface-500, #64748b);
+}

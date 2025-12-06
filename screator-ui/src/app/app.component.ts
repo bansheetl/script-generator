@@ -11,7 +11,8 @@ import { Paragraph, ScriptDocument } from './app.model';
 import { Slide } from './slide.model';
 import { AppState } from './app.reducers';
 import { scriptDataLoaded, scriptSaved, scriptSelected, slidesLoaded, deletedSlidesLoaded } from './app.actions';
-import { selectParagraphs, selectScriptEdited, selectDeletedSlides } from './app.selectors';
+import { selectParagraphs, selectScriptEdited, selectDeletedSlides, selectUndoHistoryExists, selectRedoHistoryExists } from './app.selectors';
+import { redo, undo } from './app.actions';
 import { ScriptEditorComponent } from './components/script-editor/script-editor.component';
 import { SCRIPT_ROOT_DIR } from './script.constants';
 import { ScriptConversionService } from './services/script-conversion.service';
@@ -40,6 +41,8 @@ export class AppComponent implements OnInit {
   readonly paragraphs$: Observable<Paragraph[]>;
   readonly scriptEdited$: Observable<boolean>;
   readonly deletedSlides$: Observable<string[]>;
+  readonly undoHistoryExists$: Observable<boolean>;
+  readonly redoHistoryExists$: Observable<boolean>;
 
   constructor(
     private store: Store<AppState>,
@@ -48,6 +51,8 @@ export class AppComponent implements OnInit {
     this.paragraphs$ = this.store.select(selectParagraphs);
     this.scriptEdited$ = this.store.select(selectScriptEdited);
     this.deletedSlides$ = this.store.select(selectDeletedSlides);
+    this.undoHistoryExists$ = this.store.select(selectUndoHistoryExists);
+    this.redoHistoryExists$ = this.store.select(selectRedoHistoryExists);
   }
 
   ngOnInit(): void {
@@ -122,6 +127,14 @@ export class AppComponent implements OnInit {
 
   reloadScript(): void {
     void this.onScriptSelected();
+  }
+
+  undo(): void {
+    this.store.dispatch(undo());
+  }
+
+  redo(): void {
+    this.store.dispatch(redo());
   }
 
   private loadScripts(): void {

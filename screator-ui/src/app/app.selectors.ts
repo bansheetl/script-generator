@@ -49,3 +49,8 @@ export const selectDeletedSlides = createSelector(
     selectAppState,
     (state: AppState) => state.deletedSlides
 );
+
+export const selectSelectedLibrarySlide = createSelector(
+    selectAppState,
+    (state: AppState) => state.selectedLibrarySlide
+);

@@ -1,5 +1,5 @@
 import { Action, createReducer, on } from '@ngrx/store';
-import { clearSlideCandidatesForParagraph, deleteSlideFromLibrary, deletedSlidesLoaded, redo, rejectSlideForParagraph, scriptDataLoaded, scriptSaved, scriptSelected, selectSlideForParagraph, slidesLoaded, splitParagraph, undo, updateParagraphText } from './app.actions';
+import { clearSlideCandidatesForParagraph, deleteSlideFromLibrary, deletedSlidesLoaded, deselectSlideFromLibrary, redo, rejectSlideForParagraph, scriptDataLoaded, scriptSaved, scriptSelected, selectSlideForParagraph, selectSlideFromLibrary, slidesLoaded, splitParagraph, undo, updateParagraphText } from './app.actions';
 import { Paragraph, SlideCandidate } from './app.model';
 import { Slide } from './slide.model';
 
@@ -8,6 +8,7 @@ export interface AppState {
     paragraphs: Paragraph[];
     allSlides: Slide[];
     deletedSlides: string[];
+    selectedLibrarySlide: string | null;
     scriptEdited: boolean;
     undoHistory: AppState[];
     redoHistory: AppState[];
@@ -18,10 +19,20 @@ export const initialState: AppState = {
     paragraphs: [],
     allSlides: [],
     deletedSlides: [],
+    selectedLibrarySlide: null,
     scriptEdited: false,
     undoHistory: [],
     redoHistory: []
 };
+
+function getAvailableSlides(state: AppState): Slide[] {
+    const assigned = new Set<string>();
+    state.paragraphs.forEach((paragraph) => {
+        (paragraph.selectedSlides ?? []).forEach((selected) => assigned.add(selected.slide_file));
+    });
+    const deleted = new Set(state.deletedSlides);
+    return state.allSlides.filter((slide) => !assigned.has(slide.slide_file) && !deleted.has(slide.slide_file));
+}
 
 function copyState(state: AppState): AppState {
     return {
@@ -29,6 +40,7 @@ function copyState(state: AppState): AppState {
         paragraphs: state.paragraphs.map((paragraph) => Paragraph.fromJson(paragraph)),
         allSlides: state.allSlides.map((slide) => ({ ...slide })),
         deletedSlides: [...state.deletedSlides],
+        selectedLibrarySlide: state.selectedLibrarySlide,
         scriptEdited: state.scriptEdited,
         undoHistory: [],
         redoHistory: []
@@ -50,20 +62,35 @@ const _appReducer = createReducer(
             return state;
         }
 
-        return {
+        const nextState: AppState = {
             currentScriptId: scriptId,
             allSlides: state.allSlides,
             deletedSlides: state.deletedSlides,
+            selectedLibrarySlide: null,
             undoHistory: [],
             redoHistory: [],
             scriptEdited: false,
             paragraphs: paragraphs.map((paragraph) => Paragraph.fromJson(paragraph))
         };
+        // Auto-select first available slide after script data loads (if slides are present)
+        const available = getAvailableSlides(nextState);
+        return {
+            ...nextState,
+            selectedLibrarySlide: available.length > 0 ? available[0].slide_file : null
+        };
     }),
-    on(slidesLoaded, (state, { slides }) => ({
-        ...state,
-        allSlides: slides.map((slide) => ({ ...slide }))
-    })),
+    on(slidesLoaded, (state, { slides }) => {
+        const intermediate: AppState = {
+            ...state,
+            allSlides: slides.map((slide) => ({ ...slide }))
+        };
+        // Auto-select first available slide when slide library loads
+        const available = getAvailableSlides(intermediate);
+        return {
+            ...intermediate,
+            selectedLibrarySlide: available.length > 0 ? available[0].slide_file : null
+        };
+    }),
     on(deletedSlidesLoaded, (state, { deletedSlides }) => ({
         ...state,
         deletedSlides: [...deletedSlides]
@@ -92,14 +119,21 @@ const _appReducer = createReducer(
             }
         });
 
-        return {
+        const tempState: AppState = {
             currentScriptId: state.currentScriptId,
             allSlides: state.allSlides,
             deletedSlides: state.deletedSlides,
+            selectedLibrarySlide: state.selectedLibrarySlide,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
             paragraphs: updatedParagraphs.map((item) => Paragraph.fromJson(item))
+        };
+        // After inserting a slide into a paragraph, auto-select the next available slide in library
+        const available = getAvailableSlides(tempState);
+        return {
+            ...tempState,
+            selectedLibrarySlide: available.length > 0 ? available[0].slide_file : null
         };
     }),
     on(rejectSlideForParagraph, (state, { paragraph, slideCandidate }) => {
@@ -119,6 +153,7 @@ const _appReducer = createReducer(
             currentScriptId: state.currentScriptId,
             allSlides: state.allSlides,
             deletedSlides: state.deletedSlides,
+            selectedLibrarySlide: state.selectedLibrarySlide,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
@@ -141,6 +176,7 @@ const _appReducer = createReducer(
             currentScriptId: state.currentScriptId,
             allSlides: state.allSlides,
             deletedSlides: state.deletedSlides,
+            selectedLibrarySlide: state.selectedLibrarySlide,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
@@ -161,6 +197,7 @@ const _appReducer = createReducer(
             currentScriptId: state.currentScriptId,
             allSlides: state.allSlides,
             deletedSlides: state.deletedSlides,
+            selectedLibrarySlide: state.selectedLibrarySlide,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
@@ -189,6 +226,7 @@ const _appReducer = createReducer(
             currentScriptId: state.currentScriptId,
             allSlides: state.allSlides,
             deletedSlides: state.deletedSlides,
+            selectedLibrarySlide: state.selectedLibrarySlide,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
@@ -202,6 +240,7 @@ const _appReducer = createReducer(
                 currentScriptId: state.currentScriptId,
                 allSlides: lastState.allSlides,
                 deletedSlides: lastState.deletedSlides,
+                selectedLibrarySlide: lastState.selectedLibrarySlide,
                 undoHistory: state.undoHistory.slice(0, state.undoHistory.length - 1),
                 redoHistory: [...state.redoHistory, copyState(state)],
                 scriptEdited: true,
@@ -218,6 +257,7 @@ const _appReducer = createReducer(
                 currentScriptId: state.currentScriptId,
                 allSlides: lastState.allSlides,
                 deletedSlides: lastState.deletedSlides,
+                selectedLibrarySlide: lastState.selectedLibrarySlide,
                 undoHistory: [...state.undoHistory, copyState(state)],
                 redoHistory: state.redoHistory.slice(0, state.redoHistory.length - 1),
                 scriptEdited: true,
@@ -233,16 +273,28 @@ const _appReducer = createReducer(
             return state;
         }
 
+        const newDeletedSlides = [...state.deletedSlides, slideFile];
+        const shouldDeselectLibrarySlide = state.selectedLibrarySlide === slideFile;
+
         return {
             currentScriptId: state.currentScriptId,
             allSlides: state.allSlides,
-            deletedSlides: [...state.deletedSlides, slideFile],
+            deletedSlides: newDeletedSlides,
+            selectedLibrarySlide: shouldDeselectLibrarySlide ? null : state.selectedLibrarySlide,
             undoHistory: [...state.undoHistory, copyState(state)],
             redoHistory: [],
             scriptEdited: true,
             paragraphs: state.paragraphs.map((item) => Paragraph.fromJson(item))
         };
     }),
+    on(selectSlideFromLibrary, (state, { slideFile }) => ({
+        ...state,
+        selectedLibrarySlide: slideFile
+    })),
+    on(deselectSlideFromLibrary, (state) => ({
+        ...state,
+        selectedLibrarySlide: null
+    })),
     on(scriptSaved, (state) => ({
         ...state,
         undoHistory: [],

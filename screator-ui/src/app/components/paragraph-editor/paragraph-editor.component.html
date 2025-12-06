@@ -31,140 +31,76 @@
 					}
 				}
 
-				@if (!selectionVisible) {
-					<div class="paragraph-divider">
-						<button
-							id="add-slide-button-{{ paragraph.id }}"
-							data-testid="add-slide-button"
-							pButton
-							type="button"
-							icon="pi pi-plus"
-							class="divider-button p-button-rounded p-button-success"
-							(click)="openSelection()"
-						></button>
-						<div class="divider-line"></div>
+				@if (paragraph.slideCandidates.length > 0) {
+					<div class="suggestions-section">
+						<div class="suggestions-header">
+							<h4 class="suggestions-title">Suggestions</h4>
+							<button
+								id="cancel-suggestions-button-{{ paragraph.id }}"
+								data-testid="cancel-suggestions-button"
+								pButton
+								type="button"
+								icon="pi pi-times"
+								label="Cancel"
+								class="suggestions-cancel-button p-button-text p-button-sm"
+								(click)="cancelSuggestions()"
+							></button>
+						</div>
+						<p-carousel
+							class="slide-carousel"
+							[value]="paragraph.slideCandidates"
+							[numVisible]="3"
+							[numScroll]="1"
+							[responsiveOptions]="responsiveOptions"
+							[showIndicators]="false"
+							[showNavigators]="paragraph.slideCandidates.length > 3"
+							[circular]="paragraph.slideCandidates.length > 3"
+						>
+							<ng-template pTemplate="item" let-slideCandidate>
+								<div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden with-action-bar">
+									<img [src]="slideCandidate.slide_file" class="slide" />
+									<div class="overlay">
+										<div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
+									</div>
+									<div class="slide-action-bar">
+										<button
+											data-testid="approve-slide-button"
+											pButton
+											type="button"
+											icon="pi pi-check"
+											label="Approve"
+											class="slide-action-button approve-button"
+											(click)="selectSlideCandidate(slideCandidate)"
+										></button>
+										<button
+											data-testid="reject-slide-button"
+											pButton
+											type="button"
+											icon="pi pi-times"
+											label="Reject"
+											class="slide-action-button reject-button"
+											(click)="rejectSlideCandidate(slideCandidate)"
+										></button>
+									</div>
+								</div>
+							</ng-template>
+						</p-carousel>
 					</div>
 				}
 
-				@if (selectionVisible) {
-					<div class="selection-header">
-						<button
-							id="cancel-selection-button-{{ paragraph.id }}"
-							data-testid="cancel-selection-button"
-							pButton
-							type="button"
-							icon="pi pi-times"
-							label="Cancel"
-							class="selection-cancel-button p-button-text"
-							(click)="cancelSelection()"
-						></button>
-					</div>
-					<div class="slide-mode-switch-container">
-						<p-selectbutton
-							id="slide-mode-switch-{{ paragraph.id }}"
-							data-testid="slide-mode-switch"
-							class="slide-mode-switch"
-							[options]="modeOptions"
-							optionLabel="label"
-							optionValue="value"
-							[(ngModel)]="viewMode"
-							(onChange)="onModeChange($event.value)"
-							fluid
-						></p-selectbutton>
-					</div>
-					@if (viewMode === 'suggestions') {
-						@if (paragraph.slideCandidates.length) {
-							<p-carousel
-								class="slide-carousel"
-								[value]="paragraph.slideCandidates"
-								[numVisible]="3"
-								[numScroll]="1"
-								[responsiveOptions]="responsiveOptions"
-								[showIndicators]="false"
-								[showNavigators]="paragraph.slideCandidates.length > 3"
-								[circular]="paragraph.slideCandidates.length > 3"
-							>
-								<ng-template pTemplate="item" let-slideCandidate>
-									<div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden with-action-bar">
-										<img [src]="slideCandidate.slide_file" class="slide" />
-										<div class="overlay">
-											<div class="score-bar" [style.width.%]="slideCandidate.score * 100"></div>
-										</div>
-										<div class="slide-action-bar">
-											<button
-												data-testid="approve-slide-button"
-												pButton
-												type="button"
-												icon="pi pi-check"
-												label="Approve"
-												class="slide-action-button approve-button"
-												(click)="selectSlideCandidate(slideCandidate)"
-											></button>
-											<button
-												data-testid="reject-slide-button"
-												pButton
-												type="button"
-												icon="pi pi-times"
-												label="Reject"
-												class="slide-action-button reject-button"
-												(click)="rejectSlideCandidate(slideCandidate)"
-											></button>
-										</div>
-									</div>
-								</ng-template>
-							</p-carousel>
-						} @else {
-							<div class="no-slides surface-border border-1 border-round-md text-sm text-500 p-3 text-center">
-								No slide matches found
-							</div>
-						}
-					} @else {
-						@if (getAvailableSlidesForParagraph() | async; as librarySlides) {
-							@if (librarySlides.length) {
-								<p-carousel
-									class="slide-carousel library-carousel"
-									[value]="librarySlides"
-									[numVisible]="3"
-									[numScroll]="1"
-									[responsiveOptions]="responsiveOptions"
-									[showIndicators]="false"
-									[showNavigators]="librarySlides.length > 3"
-									[circular]="librarySlides.length > 3"
-								>
-									<ng-template pTemplate="item" let-slideOption>
-										<div class="slide-wrapper border-1 surface-border border-round-md overflow-hidden library-card with-action-bar">
-											<img [src]="slideOption.slide_file" class="slide" />
-											<div class="slide-action-bar library-action">
-												<button
-													data-testid="insert-library-slide-button"
-													pButton
-													type="button"
-													icon="pi pi-plus"
-													label="Insert"
-													class="slide-action-button insert-button"
-													(click)="onLibrarySlideChosen(slideOption.slide_file)"
-												></button>
-												<button
-													data-testid="delete-library-slide-button"
-													pButton
-													type="button"
-													icon="pi pi-trash"
-													label="Delete"
-													class="slide-action-button delete-button"
-													(click)="deleteSlideFromLibrary(slideOption.slide_file)"
-												></button>
-											</div>
-										</div>
-									</ng-template>
-								</p-carousel>
-							} @else {
-								<div class="no-slides surface-border border-1 border-round-md text-sm text-500 p-3 text-center">
-									No unused slides available
-								</div>
-							}
-						}
-					}
-				}
+				<div class="paragraph-divider">
+					<button
+						id="add-slide-button-{{ paragraph.id }}"
+						data-testid="add-slide-button"
+						pButton
+						type="button"
+						icon="pi pi-plus"
+						class="divider-button p-button-rounded p-button-success"
+						[disabled]="!(selectedLibrarySlide$ | async)"
+						(click)="addSlideFromLibrary()"
+					></button>
+					<div class="divider-line"></div>
+				</div>
 			</div>
 
 			<div class="paragraph-text border-round surface-section shadow-1" [class.editing]="isEditing">
