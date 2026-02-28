@@ -112,6 +112,23 @@ class Repository:
         with open(slide_matches_file, 'r', encoding='utf-8') as file:
             return json.load(file)
 
+    def save_curated_script(self, curated_script):
+        curated_script_file = self.__get_curated_script_file()
+        print(f"Writing curated script to file {curated_script_file}")
+        with open(curated_script_file, 'w', encoding='utf-8') as json_file:
+            json.dump(curated_script, json_file, ensure_ascii=False, indent=4)
+
+    def read_curated_script(self):
+        curated_script_file = self.__get_curated_script_file()
+        if not os.path.exists(curated_script_file):
+            return None
+        print(f"Reading curated script from file {curated_script_file}")
+        with open(curated_script_file, 'r', encoding='utf-8') as file:
+            return json.load(file)
+
+    def __get_curated_script_file(self):
+        return os.path.join(self.folder_name, "curated-script.json")
+
     def __get_slides_folder(self):
         slides_folder = os.path.join(self.folder_name, 'slides')
         if not os.path.exists(slides_folder):
